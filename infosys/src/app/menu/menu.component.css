@@ -1,0 +1,76 @@
+#menu{
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.menu-button{
+    width: 80%;
+    margin: auto;
+    font-size: 2rem;
+    margin: 1rem 0;
+}
+
+.choice{
+    width: 75%;
+    margin: auto;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-around;
+}
+
+.choice-disabled{
+    display: none;
+}
+
+:host ::ng-deep h3{
+    margin: 0;
+    margin-bottom: 1rem;
+}
+
+.game-card h3{
+    margin: 0;
+}
+
+:host ::ng-deep .deck-card, .game-card{
+    text-align: center;
+    border-radius: 1rem;
+    background-color: var(--mid-blue);
+    color: white;
+    font-size: 1.2rem;
+    box-sizing: content-box;
+    min-width: 30%;
+    padding: 2rem 1rem;
+}
+:host ::ng-deep .deck-card:hover{
+    background-color: var(--dark-blue);
+    box-shadow: 1px 1px 7px 5px var(--light-blue);
+}
+.game-card{
+    margin-bottom: 1rem;
+    background-color: var(--dark-blue);
+    box-shadow: 1px 1px 7px 5px var(--light-blue);
+}
+.game-card:hover{
+    background-color: var(--mid-blue);
+}
+
+.selected-game{
+    background-color: var(--light-blue);
+    color: var(--dark-blue);
+    font-weight: bold;
+    box-shadow: 1px 1px 7px 5px var(--mid-blue);
+}
+
+:host ::ng-deep .deck-card span{
+   color: black;
+   font-weight: bold;
+}
+:host ::ng-deep .deck-card:hover span{
+    color: var(--light-blue);
+ }

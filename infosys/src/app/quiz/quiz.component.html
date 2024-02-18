@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Guesser game</title>
+    </head>
+    <body>
+        <div id="main-container">
+            <div id="guesser-container">
+                <div id="canvas-container">
+                    <canvas id="guesser-canvas"></canvas>
+                </div>
+                <div id="quiz-controls">
+                    <div id="feedback">
+                    </div>
+                    <div id="guess-buttons">
+                        <button id="div-button" class="disabled" (click)="guessConvergence(false)">Divergent</button>
+                        <button id="conv-button" class="disabled"  (click)="guessConvergence(true)">Convergent</button>
+                    </div>
+                    <div id="card-grid">
+                        <!--previews-->
+                    </div>
+                </div>
+            </div>
+            <div class="centred-container"><button id="next-button" (click)="nextExercise()">Next</button></div>
+            <div id="score">0</div>
+        </div>
+
+    </body>
+</html>

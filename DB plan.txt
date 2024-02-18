@@ -1,0 +1,238 @@
+Deck
+Id Level (kezdő stb), Type (sor/integrál)
+
+Card_group
+Id, Convergent (True/false), Subtype (mértani, hiperharmonikus stb)
+
+Card
+Id, Deck_id, Group_id, Simple (True/False), latex
+
+Pairs
+
+create table deck (id int PRIMARY KEY, level varchar(50) not null, type varchar(50) not null);
+
+create table card_group (id int PRIMARY KEY, convergent BOOLEAN, subtype varchar(50));
+
+create table card (id int PRIMARY KEY AUTO_INCREMENT, deck_id int REFERENCES deck(id), group_id int REFERENCES card_group(id), simple BOOLEAN, latex varchar(512) NOT NULL);
+
+insert into deck values(1, 'beginner', 'series');
+insert into deck values(2, 'intermediate', 'series');
+
+insert into card_group values(1, false, 'harmonic');
+insert into card_group values(2, false, 'geometric');
+insert into card_group values(3, false, 'geometric');
+insert into card_group values(4, false, 'constant');
+insert into card_group values(5, false, 'constant');
+insert into card_group values(6, false, 'hyperharmonic');
+insert into card_group values(7, true, 'geometric');
+insert into card_group values(8, true, 'hyperharmonic');
+insert into card_group values(9, true, 'hyperharmonic');
+insert into card_group values(10, true, 'hyperharmonic');
+insert into card_group values(11, true, 'hyperharmonic');
+insert into card_group values(12, true, 'hyperharmonic');
+insert into card_group values(13, true, 'geometric');
+insert into card_group values(14, true, 'geometric');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 1, false, '\\sum_{n=1}^{\\infty}\\frac{6n^3+n}{3n^4}');
+insert into card (deck_id, group_id, simple, latex) values (1, 1, false, '\\sum_{n=1}^{\\infty}\\frac{15n^2}{9n^3-1}');
+insert into card (deck_id, group_id, simple, latex) values (1, 1, false, '\\sum_{n=1}^{\\infty}\\frac{11}{6n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 1, false, '\\sum_{n=1}^{\\infty}\\frac{5}{3n-\\sqrt{n}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 1, true, '\\frac{5}{3}\\sum_{n=1}^{\\infty}\\frac{n^3}{n^4}');
+insert into card (deck_id, group_id, simple, latex) values (1, 1, true, '\\frac{5}{3}\\sum_{n=1}^{\\infty}\\frac{n^2}{n^3}');
+insert into card (deck_id, group_id, simple, latex) values (1, 1, true, '\\frac{5}{3}\\sum_{n=1}^{\\infty}\\frac{1}{n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 1, true, '\\frac{1}{3}\\sum_{n=1}^{\\infty}\\frac{5}{n}');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 2, false, '\\sum_{n=1}^{\\infty}\\frac{4^n+1}{3^n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 2, false, '\\sum_{n=1}^{\\infty}\\frac{2^{2n}\\cdot 3^n}{9^n-2n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 2, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{4}{3}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (1, 2, true, '\\sum_{n=1}^{\\infty}\\frac{2^{2n}}{3^n}');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 3, false, '\\sum_{n=1}^{\\infty}\\frac{15^n}{8^n-3}');
+insert into card (deck_id, group_id, simple, latex) values (1, 3, false, '\\sum_{n=1}^{\\infty}\\frac{5^{n+1}\\cdot 3^n}{2^{3n}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 3, false, '\\sum_{n=1}^{\\infty}\\frac{15^n+1}{\\sqrt{64^n}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 3, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{15}{8}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (1, 3, true, '\\sum_{n=1}^{\\infty} 3^n\\cdot\\left(\\frac{5}{8}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (1, 3, true, '\\sum_{n=1}^{\\infty}\\frac{15^n}{2^{3n}}');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 4, false, '\\sum_{n=1}^{\\infty}\\frac{2n^5+n}{\\sqrt{n^{10}}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 4, true,'\\sum_{n=1}^{\\infty} 2');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 5, false, '\\sum_{n=1}^{\\infty}\\frac{n+1}{n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 5, true,'\\sum_{n=1}^{\\infty} 1');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 6, false, '\\sum_{n=1}^{\\infty}\\frac{\\sqrt{n}+2}{n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 6, false, '\\sum_{n=1}^{\\infty}\\frac{1}{\\sqrt{n}-\\frac{1}{2}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 6, false, '\\sum_{n=1}^{\\infty}\\frac{3}{\\sqrt[4]{n^{2}}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 6, false, '\\sum_{n=1}^{\\infty}\\frac{\\sqrt{n}+9}{n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 6, true, '\\sum_{n=1}^{\\infty} \\sqrt{\\frac{1}{n}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 6, true, '\\sum_{n=1}^{\\infty}\\frac{1}{\\sqrt{n}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 6, true, '\\sum_{n=1}^{\\infty}\\frac{1}{n^{1/2}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 6, true, '\\sum_{n=1}^{\\infty}\\frac{\\sqrt{n}}{n}');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 7, false, '\\sum_{n=1}^{\\infty}\\frac{2^n \\cdot 3^n-n}{25^n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 7, false, '\\sum_{n=1}^{\\infty}\\frac{6^n}{25^n\\cdot n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 7, false, '\\sum_{n=1}^{\\infty}\\frac{6^n}{5^{2n}+3n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 7, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{6}{25}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (1, 7, true, '\\sum_{n=1}^{\\infty}\\ 2^n\\cdot\\left(\\frac{3}{25}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (1, 7, true, '\\sum_{n=1}^{\\infty}\\frac{6^n}{5^{2n}}');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 8, false, '\\sum_{n=1}^{\\infty}\\frac{12n^2-3}{2n^5}');
+insert into card (deck_id, group_id, simple, latex) values (1, 8, false, '\\sum_{n=1}^{\\infty}\\frac{n^7}{n^{10}+n^5}');
+insert into card (deck_id, group_id, simple, latex) values (1, 8, false, '\\sum_{n=1}^{\\infty}\\frac{12n^2-4n}{2n^{5}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 8, false, '\\sum_{n=1}^{\\infty}\\frac{6}{n^3+8}');
+insert into card (deck_id, group_id, simple, latex) values (1, 8, true, '6\\sum_{n=1}^{\\infty}\\frac{1}{n^3}');
+insert into card (deck_id, group_id, simple, latex) values (1, 8, true, '\\sum_{n=1}^{\\infty}\\frac{6n^7}{n^{10}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 8, true, '6\\sum_{n=1}^{\\infty}\\frac{n^2}{n^5}');
+insert into card (deck_id, group_id, simple, latex) values (1, 8, true, '\\frac{1}{2}\\sum_{n=1}^{\\infty}\\frac{12}{n^3}');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 9, false, '\\sum_{n=1}^{\\infty}\\frac{1}{\\sqrt{25n^5}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 9, false, '\\sum_{n=1}^{\\infty}\\frac{2n^2-1}{2n^{9/2}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 9, true, '\\sum_{n=1}^{\\infty}\\frac{1}{\\sqrt{n^5}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 9, true, '\\sum_{n=1}^{\\infty}\\frac{1}{n^{5/2}}');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 10, false, '\\sum_{n=1}^{\\infty}\\frac{6n^2-n-2}{6n^4}');
+insert into card (deck_id, group_id, simple, latex) values (1, 10, false, '\\sum_{n=1}^{\\infty}\\frac{n^3}{\\sqrt{n^{10}}+2}');
+insert into card (deck_id, group_id, simple, latex) values (1, 10, false, '\\sum_{n=1}^{\\infty}\\frac{1}{n^2+n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 10, false, '\\sum_{n=1}^{\\infty}\\frac{3n^3-n}{3n^5}');
+insert into card (deck_id, group_id, simple, latex) values (1, 10, true, '\\sum_{n=1}^{\\infty}\\frac{n^2}{n^4}');
+insert into card (deck_id, group_id, simple, latex) values (1, 10, true, '\\sum_{n=1}^{\\infty}\\frac{1}{n^2}');
+insert into card (deck_id, group_id, simple, latex) values (1, 10, true, '\\sum_{n=1}^{\\infty}\\sqrt{\\frac{1}{n^4}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 10, true, '\\sum_{n=1}^{\\infty}\\frac{n^3}{n^5}');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 11, false, '\\sum_{n=1}^{\\infty}\\frac{8n^2}{2n^9+n^3}');
+insert into card (deck_id, group_id, simple, latex) values (1, 11, false, '\\sum_{n=1}^{\\infty}\\frac{4n-2}{n^8}');
+insert into card (deck_id, group_id, simple, latex) values (1, 11, false, '\\sum_{n=1}^{\\infty}\\frac{17}{5n^7}');
+insert into card (deck_id, group_id, simple, latex) values (1, 11, true, '4\\sum_{n=1}^{\\infty} n^{-7}');
+insert into card (deck_id, group_id, simple, latex) values (1, 11, true, '\\sum_{n=1}^{\\infty}\\sqrt{\\frac{16}{n^{14}}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 11, true, '4\\sum_{n=1}^{\\infty}\\frac{1}{n^7}');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 12, false, '\\sum_{n=1}^{\\infty}\\frac{9n^2}{3n^{13}+7}');
+insert into card (deck_id, group_id, simple, latex) values (1, 12, false, '\\sum_{n=1}^{\\infty}\\frac{3}{n^{11}+2n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 12, false, '\\sum_{n=1}^{\\infty}\\frac{3n^5-1}{n^{16}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 12, true, '\\sum_{n=1}^{\\infty}\\frac{3n^2}{n^{13}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 12, true, '\\sum_{n=1}^{\\infty}\\frac{3}{n^{11}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 12, true, '3\\sum_{n=1}^{\\infty}\\left(\\frac{1}{n}\\right)^{11}');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 13, false, '\\sum_{n=1}^{\\infty}\\frac{3^n-1}{4^n+1}');
+insert into card (deck_id, group_id, simple, latex) values (1, 13, false, '\\sum_{n=1}^{\\infty}\\frac{3^n-n}{2^{2n}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 13, false, '\\sum_{n=1}^{\\infty}\\frac{3^{2n}}{12^n+10}');
+insert into card (deck_id, group_id, simple, latex) values (1, 13, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{3}{4}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (1, 13, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{1}{2}\\right)^n\\cdot \\left(\\frac{3}{2}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (1, 13, true, '\\sum_{n=1}^{\\infty}\\frac{3^{2n}}{12^n}');
+
+insert into card (deck_id, group_id, simple, latex) values (1, 14, false, '\\sum_{n=1}^{\\infty}\\frac{2^{n-1}\\cdot 3^n}{16^n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 14, false, '\\sum_{n=1}^{\\infty}\\frac{3^n}{2^{3n}\\cdot n}');
+insert into card (deck_id, group_id, simple, latex) values (1, 14, false, '\\sum_{n=1}^{\\infty}\\frac{6^n-1}{4^{2n}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 14, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{3}{8}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (1, 14, true, '\\sum_{n=1}^{\\infty}\\frac{3^n}{2^{3n}}');
+insert into card (deck_id, group_id, simple, latex) values (1, 14, true, '\\sum_{n=1}^{\\infty}\\frac{6^n}{16^n}');
+
+
+
+insert into card_group values(15, false, 'harmonic');
+insert into card_group values(16, false, 'geometric');
+insert into card_group values(17, false, 'geometric');
+insert into card_group values(18, false, 'constant');
+insert into card_group values(19, false, 'constant');
+insert into card_group values(20, false, 'hyperharmonic');
+insert into card_group values(21, true, 'geometric');
+insert into card_group values(22, true, 'hyperharmonic');
+insert into card_group values(23, true, 'hyperharmonic');
+insert into card_group values(24, true, 'hyperharmonic');
+insert into card_group values(25, true, 'hyperharmonic');
+insert into card_group values(26, true, 'hyperharmonic');
+insert into card_group values(27, true, 'geometric');
+insert into card_group values(28, true, 'geometric');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 15, false, '\\sum_{n=1}^{\\infty}\\frac{4n^3-n}{2n^4}');
+insert into card (deck_id, group_id, simple, latex) values (2, 15, false, '\\sum_{n=1}^{\\infty}\\frac{3n^2+10n}{2n^3-1}');
+insert into card (deck_id, group_id, simple, latex) values (2, 15, false, '\\sum_{n=1}^{\\infty}\\frac{\\pi}{2n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 15, false, '\\sum_{n=1}^{\\infty}\\frac{3}{2n-\\sqrt{n}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 15, true, '\\frac{3}{2}\\sum_{n=1}^{\\infty}\\frac{n^3}{n^4}');
+insert into card (deck_id, group_id, simple, latex) values (2, 15, true, '\\frac{3}{2}\\sum_{n=1}^{\\infty}\\frac{n^2}{n^3}');
+insert into card (deck_id, group_id, simple, latex) values (2, 15, true, '\\frac{3}{2}\\sum_{n=1}^{\\infty}\\frac{1}{n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 15, true, '\\frac{1}{2}\\sum_{n=1}^{\\infty}\\frac{3}{n}');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 16, false, '\\sum_{n=1}^{\\infty}\\frac{4^n}{\\sqrt{9^n}-2}');
+insert into card (deck_id, group_id, simple, latex) values (2, 16, false, '\\sum_{n=1}^{\\infty}\\frac{4^n+1}{3^n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 16, false, '\\sum_{n=1}^{\\infty}\\frac{2^{2n}\\cdot 3^n}{9^n-2n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 16, true, '\\sum_{n=1}^{\\infty}2^n\\cdot\\left(\\frac{2}{3}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (2, 16, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{4}{3}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (2, 16, true, '\\sum_{n=1}^{\\infty}\\frac{2^{2n}}{3^n}');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 17, false, '\\sum_{n=1}^{\\infty}\\frac{10\\cdot 6^n}{5^{n+1}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 17, false, '\\sum_{n=1}^{\\infty}\\frac{2^{n+1}\\cdot 3^n}{5^n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 17, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{6}{5}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (2, 17, true, '\\sum_{n=1}^{\\infty}3^n\\cdot \\left(\\frac{2}{5}\\right)^n');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 18, false, '\\sum_{n=1}^{\\infty}\\frac{2n^5+n^3}{\\sqrt{n^{10}}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 18, true, '\\sum_{n=1}^{\\infty}\\frac{n+1}{n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 19, false, '\\sum_{n=1}^{\\infty} 2');
+insert into card (deck_id, group_id, simple, latex) values (2, 19, true, '\\sum_{n=1}^{\\infty} 1');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 20, false, '\\sum_{n=1}^{\\infty}\\frac{\\sqrt{n}+2}{n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 20, false, '\\sum_{n=1}^{\\infty}\\frac{1}{\\sqrt{n}-\\frac{1}{2}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 20, false, '\\sum_{n=1}^{\\infty}\\frac{3}{\\sqrt[4]{n^{2}}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 20, false, '\\sum_{n=1}^{\\infty}\\frac{\\sqrt{n}+\\sqrt[3]{n}}{n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 20, true, '\\sum_{n=1}^{\\infty} \\frac{\\sin^2{\\frac{\\pi}{3}}+\\cos^2{\\frac{\\pi}{3}}}{\\sqrt{n}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 20, true, '\\sum_{n=1}^{\\infty}\\frac{1}{\\sqrt{n}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 20, true, '\\sum_{n=1}^{\\infty}\\frac{1}{n^{1/2}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 20, true, '\\sum_{n=1}^{\\infty}\\frac{\\sqrt{n}}{n}');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 21, false, '\\sum_{n=1}^{\\infty}\\frac{2^n \\cdot 3^n-n}{25^n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 21, false, '\\sum_{n=1}^{\\infty}\\frac{6^n}{5^{2n}+3n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 21, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{6}{25}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (2, 21, true, '\\sum_{n=1}^{\\infty}\\frac{6^n}{5^{2n}}');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 22, false, '\\sum_{n=1}^{\\infty}\\frac{12n^2-3}{3n^5}');
+insert into card (deck_id, group_id, simple, latex) values (2, 22, false, '\\sum_{n=1}^{\\infty}\\frac{n^7}{3^n \\cdot n^{10}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 22, false, '\\sum_{n=1}^{\\infty}\\frac{6n^7-3n^3}{\\sqrt{n^{20}}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 22, false, '\\sum_{n=1}^{\\infty}\\frac{\\cos^2 n}{n^3}');
+insert into card (deck_id, group_id, simple, latex) values (2, 22, true, '6\\sum_{n=1}^{\\infty}\\frac{1}{n^3}');
+insert into card (deck_id, group_id, simple, latex) values (2, 22, true, '\\sum_{n=1}^{\\infty}\\frac{6n^7}{n^{10}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 22, true, '6\\sum_{n=1}^{\\infty}\\frac{n^2}{n^5}');
+insert into card (deck_id, group_id, simple, latex) values (2, 22, true, '6\\sum_{n=1}^{\\infty}\\frac{\\tan{\\frac{\\pi}{4}}}{n^3}');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 23, false, '\\sum_{n=1}^{\\infty}\\frac{5n^2-n}{\\sqrt{25n^9}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 23, false, '\\sum_{n=1}^{\\infty}\\frac{n}{n^{7/2}+n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 23, false, '\\sum_{n=1}^{\\infty}\\frac{2n^2-\\sqrt{n}}{2n^{9/2}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 23, false, '\\sum_{n=1}^{\\infty}\\frac{\\sqrt{n}}{n^3+1}');
+insert into card (deck_id, group_id, simple, latex) values (2, 23, true, '\\sum_{n=1}^{\\infty}\\frac{1}{\\sqrt{n^5}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 23, true, '\\sum_{n=1}^{\\infty}\\frac{n}{n^{7/2}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 23, true, '\\sum_{n=1}^{\\infty}\\frac{1}{n^{5/2}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 23, true, '\\sum_{n=1}^{\\infty}\\frac{\\sqrt{n}}{n^3}');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 24, false, '\\sum_{n=1}^{\\infty}\\frac{6n^2-n-2}{6n^4+3n+5}');
+insert into card (deck_id, group_id, simple, latex) values (2, 24, false, '\\sum_{n=1}^{\\infty}\\frac{n^3}{\\sqrt{n^{10}}+\\sqrt[3]{n^{19}}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 24, false, '\\sum_{n=1}^{\\infty}\\frac{1}{2^n\\cdot n^2}');
+insert into card (deck_id, group_id, simple, latex) values (2, 24, false, '\\sum_{n=1}^{\\infty}\\frac{3n^3-n}{3n^5}');
+insert into card (deck_id, group_id, simple, latex) values (2, 24, false, '\\sum_{n=1}^{\\infty}\\frac{\\sin^2 n}{n^2}');
+insert into card (deck_id, group_id, simple, latex) values (2, 24, true, '\\sum_{n=1}^{\\infty}\\frac{n^2}{n^4}');
+insert into card (deck_id, group_id, simple, latex) values (2, 24, true, '\\sum_{n=1}^{\\infty}\\frac{1}{n^2}');
+insert into card (deck_id, group_id, simple, latex) values (2, 24, true, '\\sum_{n=1}^{\\infty}\\frac{\\cos^2\\pi + \\sin^2 \\pi}{n^2}');
+insert into card (deck_id, group_id, simple, latex) values (2, 24, true, '\\sum_{n=1}^{\\infty}\\frac{n^3}{n^5}');
+insert into card (deck_id, group_id, simple, latex) values (2, 24, true, '\\sum_{n=1}^{\\infty} n^{-2}');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 25, false, '\\sum_{n=1}^{\\infty}\\frac{\\sqrt[3]{n^2}}{n^4+2n^3+1}');
+insert into card (deck_id, group_id, simple, latex) values (2, 25, false, '\\sum_{n=1}^{\\infty}\\frac{1}{\\left(2\\sqrt[3]{n^2}\\right)^5}');
+insert into card (deck_id, group_id, simple, latex) values (2, 25, true, '\\sum_{n=1}^{\\infty}\\sqrt[3]{\\frac{1}{n^{10}}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 25, true, '\\sum_{n=1}^{\\infty}\\frac{1}{\\sqrt[3]{n^{10}}}');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 26, false, '\\sum_{n=1}^{\\infty}\\frac{9n^2-n}{3n^{13}+1}');
+insert into card (deck_id, group_id, simple, latex) values (2, 26, false, '\\sum_{n=1}^{\\infty}\\frac{3n^5-1}{n^{16}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 26, true, '\\sum_{n=1}^{\\infty}\\frac{3n^2}{n^{13}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 26, true, '3\\sum_{n=1}^{\\infty}\\left(\\frac{1}{n}\\right)^{11}');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 27, false, '\\sum_{n=1}^{\\infty}\\frac{3^n-1}{4^n+1}');
+insert into card (deck_id, group_id, simple, latex) values (2, 27, false, '\\sum_{n=1}^{\\infty}\\frac{3^n-n}{2^{2n}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 27, false, '\\sum_{n=1}^{\\infty}\\frac{3^{2n}}{12^n+10^n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 27, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{3}{4}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (2, 27, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{1}{2}\\right)^n\\cdot \\left(\\frac{3}{2}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (2, 27, true, '\\sum_{n=1}^{\\infty}\\frac{3^n}{2^{2n}}');
+
+insert into card (deck_id, group_id, simple, latex) values (2, 28, false, '\\sum_{n=1}^{\\infty}\\frac{2^{n-1}\\cdot 3^n}{16^n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 28, false, '\\sum_{n=1}^{\\infty}\\frac{3^n}{2^{3n}\\cdot n}');
+insert into card (deck_id, group_id, simple, latex) values (2, 28, false, '\\sum_{n=1}^{\\infty}\\frac{6^n-1}{4^{2n}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 28, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{3}{8}\\right)^n');
+insert into card (deck_id, group_id, simple, latex) values (2, 28, true, '\\sum_{n=1}^{\\infty}\\frac{3^n}{2^{3n}}');
+insert into card (deck_id, group_id, simple, latex) values (2, 28, true, '\\sum_{n=1}^{\\infty}\\left(\\frac{3\\sin{\\frac{\\pi}{2}}}{8}\\right)^n');
