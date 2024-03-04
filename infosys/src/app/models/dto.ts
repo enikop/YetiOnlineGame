@@ -17,3 +17,14 @@ export interface CardDTO {
     deck: DeckDTO;
     cardGroup: CardGroupDTO;
 }
+
+export interface CardExtendedDTO {
+    id: number;
+    latex: string;
+    simple: boolean;
+    deck: DeckDTO;
+    cardGroup: CardGroupDTO;
+    groupId: number;
+    subtype: string;
+    convergent: boolean;
+}

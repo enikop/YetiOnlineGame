@@ -19,4 +19,11 @@ export class CardGroupController extends Controller {
             this.handleError(res, err);
         }
     };
+
+    callGetAllGroupsWithCards = async (deckId: string, res: Response) => {
+        const mockReq = { params: { deckId } } as Request<any, any, any>;
+        await this.getAllGroupsWithCards(mockReq, res);
+    }
+
+
 }

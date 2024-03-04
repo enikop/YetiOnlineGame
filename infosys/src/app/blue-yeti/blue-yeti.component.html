@@ -1,1 +1,113 @@
-<p>blue-yeti works!</p>
+<div class="container">
+    <div class="player-top">
+        <div class="player-username" [class.highlighted-player]="turnId==players[2].playerId">{{players[2].userName}} <span *ngIf="turnId==players[2].playerId" class="material-icons">pending</span></div>
+        <div class="player-hand other-hand">
+            <div class="others-card" *ngFor="let index of repeatArray(players[2].cardNumber)" (mouseover)="onCardHover($event)"
+                (mouseleave)="onCardLeave($event)" (click)="onCardClick(players[2], index)"></div>
+        </div>
+    </div>
+    <div id="pairing-space">
+        <div id="div-space">
+            <div class="card-slot" id="div-less-spot" [cdkDropListData]="divergentLessSlot" cdkDropList
+                (cdkDropListDropped)="onDrop($event)" #divLList="cdkDropList"
+                [cdkDropListConnectedTo]="[firstRowList, secondRowList, divGList, convLList, convGList]">
+                <div *ngIf="divergentLessSlot.length > 0" class="card" cdkDrag>
+                    <div class="card-placeholder" *cdkDragPlaceholder></div>
+                    <canvas #cardCanvas id="canvas-{{divergentLessSlot[0].id}}"></canvas>
+                </div>
+            </div>
+            <div class="relation-symbol">&lt;</div>
+            <div class="card-slot" id="div-greater-spot" [cdkDropListData]="divergentGreaterSlot" cdkDropList
+                (cdkDropListDropped)="onDrop($event)" #divGList="cdkDropList"
+                [cdkDropListConnectedTo]="[firstRowList, secondRowList,  divLList, convLList, convGList]">
+                <div *ngIf="divergentGreaterSlot.length > 0" class="card" cdkDrag>
+                    <div class="card-placeholder" *cdkDragPlaceholder></div>
+                    <canvas #cardCanvas id="canvas-{{divergentGreaterSlot[0].id}}"></canvas>
+                </div>
+            </div>
+        </div>
+        <div id="conv-space">
+            <div class="card-slot" id="conv-less-spot" [cdkDropListData]="convergentLessSlot" cdkDropList
+                (cdkDropListDropped)="onDrop($event)" #convLList="cdkDropList"
+                [cdkDropListConnectedTo]="[firstRowList, secondRowList,  divLList, divGList, convGList]">
+                <div *ngIf="convergentLessSlot.length > 0" class="card" cdkDrag>
+                    <div class="card-placeholder" *cdkDragPlaceholder></div>
+                    <canvas #cardCanvas id="canvas-{{convergentLessSlot[0].id}}"></canvas>
+                </div>
+            </div>
+            <div class="relation-symbol">&lt;</div>
+            <div class="card-slot" id="conv-greater-spot" [cdkDropListData]="convergentGreaterSlot" cdkDropList
+                (cdkDropListDropped)="onDrop($event)" #convGList="cdkDropList"
+                [cdkDropListConnectedTo]="[firstRowList, secondRowList,  divLList, divGList, convLList]">
+                <div *ngIf="convergentGreaterSlot.length > 0" class="card" cdkDrag>
+                    <div class="card-placeholder" *cdkDragPlaceholder></div>
+                    <canvas #cardCanvas id="canvas-{{convergentGreaterSlot[0].id}}"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="player-bottom">
+        <div class="player-username" [class.highlighted-player]="turnId==myId">{{players[0].userName}} <span *ngIf="turnId==myId" class="material-icons">pending</span></div>
+        <div class="player-hand player-current">
+            <div>
+                <div cdkDropList cdkDropListOrientation="horizontal" #firstRowList="cdkDropList"
+                    [cdkDropListData]="firstRow" [cdkDropListConnectedTo]="[secondRowList, divLList, divGList, convLList, convGList]" class="row" id="first-row"
+                    (cdkDropListDropped)="onDrop($event)">
+                    @for (item of firstRow; track item) {
+                    <div class="card" id="card-{{item.id}}" cdkDrag>
+                        <div class="card-placeholder" *cdkDragPlaceholder></div>
+                        <canvas #cardCanvas id="canvas-{{item.id}}"></canvas>
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <div>
+                <div cdkDropList cdkDropListOrientation="horizontal" #secondRowList="cdkDropList"
+                    [cdkDropListData]="secondRow" [cdkDropListConnectedTo]="[firstRowList, divLList, divGList, convLList, convGList]" id="second-row" class="row"
+                    (cdkDropListDropped)="onDrop($event)">
+                    @for (item of secondRow; track item) {
+                    <div class="card" id="card-{{item.id}}" cdkDrag>
+                        <div class="card-placeholder" *cdkDragPlaceholder></div>
+                        <canvas #cardCanvas id="canvas-{{item.id}}"></canvas>
+                    </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="player-left">
+        <div class="player-username" [class.highlighted-player]="turnId==players[3].playerId">{{players[3].userName}} <span *ngIf="turnId==players[3].playerId" class="material-icons">pending</span></div>
+        <div class="player-hand other-hand">
+            <div class="others-card" *ngFor="let index of repeatArray(players[3].cardNumber)" (mouseover)="onCardHover($event)"
+                (mouseleave)="onCardLeave($event)" (click)="onCardClick(players[3], index)"></div>
+        </div>
+    </div>
+    <div class="player-right">
+        <div class="player-username" [class.highlighted-player]="turnId==players[1].playerId">{{players[1].userName}} <span *ngIf="turnId==players[1].playerId" class="material-icons">pending</span></div>
+        <div class="player-hand other-hand">
+            <div class="others-card" *ngFor="let index of repeatArray(players[1].cardNumber)" (mouseover)="onCardHover($event)"
+                (mouseleave)="onCardLeave($event)" (click)="onCardClick(players[1], index)"></div>
+        </div>
+    </div>
+    <div id="sidebar" [class.active]="isSidebarActive">
+        <div id="sidebar-history">
+            <h2>Pairs so far</h2>
+            <h3>Convergent</h3>
+            <div class="pair-container" id="conv-pair-container">
+                <div class="pair" *ngFor="let pair of getConvergentPreviousPairs(); let i = index">
+                    <canvas #convPairCanvas id="convpaircanvas-{{i}}"></canvas>
+                </div>
+            </div>
+            <h3>Divergent</h3>
+            <div class="pair-container" id="div-pair-container">
+                <div class="pair" *ngFor="let pair of getDivergentPreviousPairs(); let i = index">
+                    <canvas #divPairCanvas id="divpaircanvas-{{i}}"></canvas>
+                </div>
+            </div>
+        </div>
+        <div id="sidebar-button" (click)="toggleSidebar()"><span class="material-icons">history</span></div>
+    </div>
+    
+</div>

@@ -1,60 +1,394 @@
-import { Component } from '@angular/core';
-import { BlueYetiService } from '../services/blue-yeti.service';
-import { CardGroupService } from '../services/card-group.service';
+import { ChangeDetectorRef, Component, ElementRef, QueryList, ViewChildren } from '@angular/core';
+import { BlueYetiService, SpotType } from '../services/blue-yeti.service';
 import { ActivatedRoute } from '@angular/router';
-import { CardDTO, CardGroupDTO } from '../models/dto';
+import { CardDTO, CardExtendedDTO } from '../models/dto';
+import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { CommonModule } from '@angular/common';
+import { renderLatex } from '../latexhandler';
+import { Subscription } from 'rxjs';
+
+export interface SimpleCard{
+  id: string,
+  latex: string
+}
+
+interface Player{
+  playerId: string,
+  userName: string,
+  cardNumber: number
+}
+
+interface Pair{
+  less: SimpleCard,
+  greater: SimpleCard,
+  convergent: boolean
+}
 
 @Component({
   selector: 'app-blue-yeti',
   standalone: true,
-  imports: [],
+  imports: [DragDropModule, CommonModule],
   templateUrl: './blue-yeti.component.html',
   styleUrl: './blue-yeti.component.css'
 })
 export class BlueYetiComponent {
   DECK_SIZE: number = 29;
-  currentDeck:(CardDTO | string)[]=['y'];
+  CARD_WIDTH: number = 210;
+  CARD_HEIGHT: number = 140;
+  myId: string = "";
+  players: Player[] = [
+  { playerId: '1', userName: 'deathly_hallow', cardNumber: 0 },
+  { playerId: '2', userName: 'vincent', cardNumber: 4 },
+  { playerId: '3', userName: 'malfoyd', cardNumber: 8 },
+  { playerId: '4', userName: 'hedwig', cardNumber: 7 }
+  ];
+  currentDeck: (CardDTO | string)[] = ['y'];
+  handSubscription: Subscription | undefined;
+  giveCardSubscription: Subscription | undefined;
+  @ViewChildren('cardCanvas') canvasRefs!: QueryList<ElementRef<HTMLCanvasElement>>;
+  @ViewChildren('convPairCanvas') convPairRefs!: QueryList<ElementRef<HTMLCanvasElement>>;
+  @ViewChildren('divPairCanvas') divPairRefs!: QueryList<ElementRef<HTMLCanvasElement>>;
+
+  divergentLessSlot:SimpleCard[]=[];
+  divergentGreaterSlot:SimpleCard[]=[];
+  convergentLessSlot:SimpleCard[]=[];
+  convergentGreaterSlot:SimpleCard[]=[];
+
+  previousPairs: Pair[] = [
+    
+  ];
+
+  isSidebarActive: boolean = false;
 
   constructor(
-    private cardGroupService: CardGroupService,
-    private currentRoute: ActivatedRoute
-  ) { } 
+    private currentRoute: ActivatedRoute,
+    private cdr: ChangeDetectorRef
+  ) { }
+  firstRow: SimpleCard[] = [
+    { id: '1', latex: '\\frac{a}{b}' },
+    { id: '2', latex: '\\sqrt{x}' },
+    { id: '3', latex: 'e^{i\\pi} + 1 = 0' },
+    { id: '4', latex: '\\int_{a}^{b} f(x) \\,dx' }
+  ];
+  secondRow: SimpleCard[] =  [
+    { id: '5', latex: '\\frac{4}{5}' },
+    { id: '6', latex: '\\sqrt{9}' },
+    { id: '7', latex: 'e^{234\\pi} + 1 = 0' },
+    { id: '8', latex: '\\int_{6}^{7} f(x) \\,dx' }
+  ];
+  turnId:string ="";
+  pullFromId:string ="";
+  blueYetiService!: BlueYetiService;
+  drawIndex: number = -1;
 
-  ngOnInit(){
-    var blueYetiService = new BlueYetiService();
+
+  ngOnInit(): void {
     const deckId = this.currentRoute.snapshot.params['deckId'];
-    this.cardGroupService.getAllFromDeck(deckId).subscribe({
-      next: (groups) => {
-        var index = 0;
-        while(this.currentDeck.length < this.DECK_SIZE){
-          if(index >= groups.length) index = 0;
-          var group = groups[index];
-          this.currentDeck.push(this.chooseRandomElement(group.cards.filter(card => card.simple)));
-          this.currentDeck.push(this.chooseRandomElement(group.cards.filter(card => !card.simple)));
-          index++;
-        }
-        this.currentDeck = this.shuffle(this.currentDeck);
-        console.log(this.currentDeck);
-      },
-      error: (error) => {
-        console.error('Error fetching cards:', error.message);
-      }  
-    }); 
+    this.blueYetiService = new BlueYetiService();
+    this.myId = Math.floor(Math.random() * 100).toString();
+    this.turnId = this.myId;
+    this.blueYetiService.connect(deckId, this.myId);
+    this.handSubscription = this.blueYetiService.getObservable().subscribe((received) => {
+      if(received.type == 'init'){
+        this.refreshFullGameState(received.data);
+      } else if(received.type == 'give'){
+        this.giveCard(received.data);
+      } else if(received.type == 'pulled'){
+        this.pullCard();
+      } else if(received.type == 'received'){
+        this.receiveCard(received.data);
+      } else if(received.type == 'next'){
+        this.nextPlayerTurn(received.data);
+      } else if(received.type == 'put-down'){
+        this.placeCardDown(received.data);
+      } else if(received.type == 'move'){
+        this.moveCard(received.data);
+      }else if(received.type == 'put-back'){
+        this.placeCardBack(received.data);
+      }else if(received.type == 'pair-feedback'){
+        this.processFeedback(received.data);
+      }
+    });
 
   }
-  chooseRandomElement(array: any[]): any | undefined {
-    if (array.length === 0) {
-      return undefined;
+
+  processFeedback(feedbackData: any){
+    //Actions for current player
+    if(this.turnId == this.myId && feedbackData.valid) window.alert("Ügyes!");
+    if(this.turnId == this.myId && !feedbackData.valid) window.alert(feedbackData.message);
+    
+    //Actions for everybody
+    if(feedbackData.valid){
+      if(feedbackData.convergent){
+        this.convergentLessSlot.splice(0);
+        this.convergentGreaterSlot.splice(0);
+      } else {
+        this.divergentLessSlot.splice(0);
+        this.divergentGreaterSlot.splice(0);
+      }
+      this.previousPairs.push({less:feedbackData.less, greater:feedbackData.greater, convergent: feedbackData.convergent});
+      this.cdr.detectChanges();
+      this.drawAllFormulas();
+      this.drawPairs();
+    } else {
+      //TODO: implement stealing
     }
-    const randomIndex = Math.floor(Math.random() * array.length);
-    return array[randomIndex];
+
   }
-  shuffle(array: any[]){ 
-    const shuffledArray = array.slice();
-    for (let i = shuffledArray.length - 1; i > 0; i--) { 
-      const j = Math.floor(Math.random() * (i + 1)); 
-      [shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]]; 
+
+  moveCard(placementData: any){
+    //Vanish from previous place, appear on new place
+    this.placeCardDown({userId: placementData.userId, cardPlacement: placementData.newPlacement, card: placementData.card});
+    this.placeCardBack({userId: placementData.userId, cardPlacement: placementData.previousPlacement, card: placementData.card});
+  }
+
+  placeCardDown(placementData: any){
+    if(placementData.userId == this.myId) return;
+    this.players.filter(player => player.playerId == placementData.userId)[0].cardNumber--;
+    switch(placementData.cardPlacement){
+      case 'div-less-spot': {
+        this.divergentLessSlot.push(placementData.card); 
+        break;
+      }
+      case 'div-greater-spot': {
+        this.divergentGreaterSlot.push(placementData.card); 
+        break;
+      }
+      case 'conv-less-spot': {
+        this.convergentLessSlot.push(placementData.card); 
+        break;
+      }
+      case 'conv-greater-spot': {
+        this.convergentGreaterSlot.push(placementData.card); 
+        break;
+      }
+    }
+    this.cdr.detectChanges();
+    this.drawAllFormulas();
+  }
+
+  placeCardBack(placementData: any){
+    //If I was the one playing a card, do nothing
+    if(placementData.userId == this.myId) return;
+    this.players.filter(player => player.playerId == placementData.userId)[0].cardNumber++;
+    //If not, place the card in the corresponding spot
+    switch(placementData.cardPlacement){
+      case 'div-less-spot': {
+        this.divergentLessSlot.splice(0); 
+        break;
+      }
+      case 'div-greater-spot': {
+        this.divergentGreaterSlot.splice(0); 
+        break;
+      }
+      case 'conv-less-spot': {
+        this.convergentLessSlot.splice(0); 
+        break;
+      }
+      case 'conv-greater-spot': {
+        this.convergentGreaterSlot.splice(0); 
+        break;
+      }
+    }
+    this.cdr.detectChanges();
+    this.drawAllFormulas();
+  }
+
+  nextPlayerTurn(playerId: string){
+    //Adjust the number of cards of each player
+    var indexOfGiver = this.players.findIndex(player => player.playerId == playerId);
+    var indexOfReceiver = this.players.findIndex(player => player.playerId == this.turnId);
+    this.players[indexOfGiver].cardNumber--;
+    this.players[indexOfReceiver].cardNumber++;
+
+    //Delete or put back placed center cards
+    this.putPlacedCardsBack();
+
+    //Switch to next player's turn
+    this.turnId = playerId;
+    var nextGiverIndex = indexOfGiver + 1;
+    if(nextGiverIndex >= this.players.length) nextGiverIndex = 0;
+    this.pullFromId = this.players[nextGiverIndex].playerId;
+  }
+
+  putPlacedCardsBack(){
+    var allCards = [...this.firstRow, ...this.secondRow];
+    if(this.turnId == this.myId){
+      allCards = [...allCards, ...this.divergentLessSlot, ...this.divergentGreaterSlot, ...this.convergentLessSlot, ...this.convergentGreaterSlot];
+    }
+    this.divergentLessSlot.splice(0);
+    this.divergentGreaterSlot.splice(0);
+    this.convergentGreaterSlot.splice(0);
+    this.convergentLessSlot.splice(0);
+    this.refreshHand(allCards);
+  }
+
+  receiveCard(cardData: any){
+    var card: SimpleCard = cardData;
+    var concatHand = [...this.firstRow, ...this.secondRow];
+    const randomIndex = Math.floor(Math.random() * (concatHand.length + 1));
+    concatHand.splice(randomIndex, 0, card);
+    this.refreshHand(concatHand);
+
+  }
+  giveCard(drawData:any){
+    this.drawIndex = drawData.cardIndex;
+    var concatHand = [...this.firstRow, ...this.secondRow];
+    this.blueYetiService.giveCard(concatHand[this.drawIndex]);
+  }
+
+  pullCard(){
+    if(this.drawIndex<4){
+      this.firstRow.splice( this.drawIndex, 1);
+    } else {
+      this.secondRow.splice( this.drawIndex-4, 1);
+    }
+    var concatHand = [...this.firstRow, ...this.secondRow];
+    this.refreshHand(concatHand);
+  }
+
+  ngOnDestroy(): void {
+    if (this.handSubscription) {
+      this.handSubscription.unsubscribe();
+    }
+  }
+
+  ngAfterViewInit() {
+    this.drawAllFormulas();
+    this.drawPairs();
+  }
+
+
+  onDrop(event: CdkDragDrop<SimpleCard[]>) {
+    var commonCardSlotIds = ["div-less-spot", "div-greater-spot", "conv-less-spot", "conv-greater-spot"];
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      if(commonCardSlotIds.includes(event.container.id) && (this.turnId != this.myId || event.container.data.length>0)) return;
+      else if(commonCardSlotIds.includes(event.previousContainer.id) && this.turnId != this.myId) return;
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex,
+      );
+      if (event.container.id === 'first-row' && this.firstRow.length > 4) {
+        this.secondRow.splice(0, 0, this.firstRow.pop()!);
+      } else  if (event.container.id === 'second-row' && this.secondRow.length > 4)  {
+        this.firstRow.push(this.secondRow.shift()!);
+      } else if(commonCardSlotIds.includes(event.container.id) && commonCardSlotIds.includes(event.previousContainer.id)) {
+        this.blueYetiService.moveCard(event.container.data[event.currentIndex], event.previousContainer.id as SpotType, event.container.id as SpotType, this.myId);
+      }else if(commonCardSlotIds.includes(event.container.id)) {
+        this.blueYetiService.placeCard(event.container.data[event.currentIndex], event.container.id as SpotType, this.myId);
+      } else if(commonCardSlotIds.includes(event.previousContainer.id) && (event.container.id === 'first-row' || event.container.id === 'second-row')) {
+        this.blueYetiService.replaceCard(event.container.data[event.currentIndex], event.previousContainer.id as SpotType, this.myId);
+      }
+      this.cdr.detectChanges();
+      this.drawAllFormulas();
+    }
+  }
+
+  onCardHover(event: MouseEvent) {
+    const cardElement = event.target as HTMLElement;
+    cardElement.classList.add('hovered');
+  }
+
+  onCardLeave(event: MouseEvent) {
+    const cardElement = event.target as HTMLElement;
+    cardElement.classList.remove('hovered');
+  }
+
+  onCardClick(player:Player, clickedIndex: number){
+    if(this.turnId == this.myId && player.playerId == this.pullFromId){
+      this.blueYetiService.drawCard(clickedIndex, this.myId);
     } 
-    return shuffledArray; 
-  }; 
+    else console.log("Cannot pull card from this player");
+  }
+
+  
+  refreshFullGameState(hand:any){
+    var concatHand: SimpleCard[] = hand.hand;
+    //get players and shift array so that the current player is the first (order is preserved)
+    var players: Player[] = hand.players;
+    this.refreshPlayers(players);
+    this.refreshHand(concatHand);
+  }
+
+  refreshHand(concatHand: SimpleCard[]){
+    this.firstRow.splice(0, this.firstRow.length, ...concatHand.slice(0,4));
+    this.secondRow.splice(0, this.secondRow.length, ...concatHand.slice(4));
+    this.cdr.detectChanges();
+    this.drawAllFormulas();
+  }
+
+  refreshPlayers(players:Player[]){
+    this.turnId = players[0].playerId;
+    const index = players.findIndex(player => player.playerId == this.myId.toString());
+    if (index != -1) {
+        this.players = players.slice(index).concat(players.slice(0, index));    
+        this.pullFromId = players[1].playerId;
+    } else {
+        //TODO: exception
+    }
+  }
+
+  drawAllFormulas() {
+    this.canvasRefs.forEach((canvasRef) => {
+      var id = canvasRef.nativeElement.id.split('-')[1];
+      var concatHand = [...this.firstRow, ...this.secondRow, ...this.divergentGreaterSlot, ...this.divergentLessSlot, ...this.convergentGreaterSlot, ...this.convergentLessSlot];
+      this.drawFormulaOntoCanvas(document.getElementById(canvasRef.nativeElement.id) as HTMLCanvasElement, concatHand.filter(card => card.id == id)[0].latex, this.CARD_HEIGHT, this.CARD_WIDTH);
+    });
+  }
+
+  drawPairs(){
+    this.convPairRefs.forEach((canvas)=>{
+      var id = parseInt(canvas.nativeElement.id.split('-')[1]);
+      var pair = this.getConvergentPreviousPairs()[id];
+      this.drawFormulaOntoCanvas(document.getElementById(canvas.nativeElement.id) as HTMLCanvasElement, pair.less.latex+"<"+pair.greater.latex, 75, 300);
+    })
+    this.divPairRefs.forEach((canvas)=>{
+      var id = parseInt(canvas.nativeElement.id.split('-')[1]);
+      var pair = this.getDivergentPreviousPairs()[id];
+      this.drawFormulaOntoCanvas(document.getElementById(canvas.nativeElement.id) as HTMLCanvasElement, pair.less.latex+"<"+pair.greater.latex, 75, 300);
+    })
+  }
+
+  drawFormulaOntoCanvas(canvas: HTMLCanvasElement, latex: string, height:number, width:number) {
+    canvas.style.height = height + 'px';
+    canvas.style.width = width + 'px';
+    canvas.height = height * 3;
+    canvas.width = width * 3;
+    var equationImage = new Image();
+    equationImage.addEventListener("load", () => {
+      const ctx = canvas.getContext("2d")!;
+      let latexWidth = equationImage.naturalWidth*4;
+      let latexHeight = equationImage.naturalHeight*4;
+      let currentY = canvas.height / 2 - latexHeight / 2;
+      let currentX = canvas.width / 2 - latexWidth / 2;
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if(latex == 'y')  ctx.drawImage(equationImage, 0, 0, canvas.width, canvas.height);
+      else ctx.drawImage(equationImage, currentX, currentY, Math.min(latexWidth, canvas.width), Math.min(latexHeight, canvas.height));
+
+    });
+    if(latex == 'y') equationImage.src = '../../assets/yeti.png';
+    else equationImage.src = renderLatex(latex);
+
+  }
+
+  repeatArray(length: number): any[] {
+    return Array.from({ length }, (_, index) => index);
+  }
+
+  getConvergentPreviousPairs(): Pair[] {
+    return this.previousPairs.filter(pair => pair.convergent);
+  }
+
+  getDivergentPreviousPairs(): Pair[] {
+    return this.previousPairs.filter(pair => !pair.convergent);
+  }
+
+  toggleSidebar():void{
+    this.isSidebarActive = !this.isSidebarActive;
+  }
 }
