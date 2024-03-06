@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, ElementRef, QueryList, ViewChildren } from '@angular/core';
 import { BlueYetiService, SpotType } from '../services/blue-yeti.service';
 import { ActivatedRoute } from '@angular/router';
-import { CardDTO, CardExtendedDTO } from '../models/dto';
+import { CardDTO} from '../models/dto';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { renderLatex } from '../latexhandler';
@@ -11,6 +11,8 @@ export interface SimpleCard{
   id: string,
   latex: string
 }
+
+type TurnPhase = 'draw' | 'pair';
 
 interface Player{
   playerId: string,
@@ -54,16 +56,10 @@ export class BlueYetiComponent {
   convergentLessSlot:SimpleCard[]=[];
   convergentGreaterSlot:SimpleCard[]=[];
 
-  previousPairs: Pair[] = [
-    
-  ];
+  previousPairs: Pair[] = [];
 
   isSidebarActive: boolean = false;
 
-  constructor(
-    private currentRoute: ActivatedRoute,
-    private cdr: ChangeDetectorRef
-  ) { }
   firstRow: SimpleCard[] = [
     { id: '1', latex: '\\frac{a}{b}' },
     { id: '2', latex: '\\sqrt{x}' },
@@ -78,15 +74,34 @@ export class BlueYetiComponent {
   ];
   turnId:string ="";
   pullFromId:string ="";
+  turnPhase: TurnPhase = 'draw';
   blueYetiService!: BlueYetiService;
   drawIndex: number = -1;
+  yetiImage!: HTMLImageElement;
+  result: string[] = [];
+  newCardId:string = '';
+
+  constructor(
+    private currentRoute: ActivatedRoute,
+    private cdr: ChangeDetectorRef
+  ) { }
+
 
 
   ngOnInit(): void {
+    this.yetiImage = new Image();
+    //load resources then initialize game
+    this.yetiImage.addEventListener("load", () => {
+      this.initializeGame();
+    });
+    this.yetiImage.src = '../../assets/yeti.png';
+  }
+
+  initializeGame(){
+    //start socket communication with server, initialize observer subscription
     const deckId = this.currentRoute.snapshot.params['deckId'];
     this.blueYetiService = new BlueYetiService();
-    this.myId = Math.floor(Math.random() * 100).toString();
-    this.turnId = this.myId;
+    this.myId = Math.floor(Math.random() * 100).toString(); //temp line
     this.blueYetiService.connect(deckId, this.myId);
     this.handSubscription = this.blueYetiService.getObservable().subscribe((received) => {
       if(received.type == 'init'){
@@ -97,6 +112,8 @@ export class BlueYetiComponent {
         this.pullCard();
       } else if(received.type == 'received'){
         this.receiveCard(received.data);
+      } else if(received.type == 'pair-start'){
+        this.startPairingPhase();
       } else if(received.type == 'next'){
         this.nextPlayerTurn(received.data);
       } else if(received.type == 'put-down'){
@@ -107,14 +124,39 @@ export class BlueYetiComponent {
         this.placeCardBack(received.data);
       }else if(received.type == 'pair-feedback'){
         this.processFeedback(received.data);
+      }else if(received.type == 'player-out'){
+        this.handlePlayerOut(received.data);
+      }else if(received.type == 'game-over'){
+        this.handleGameOver(received.data);
       }
     });
+  }
 
+  handleGameOver(resultData: any){
+    this.result = resultData.result;
+    this.result.push(resultData.loser);
+    if(resultData.loser == this.myId){
+      window.alert('You lost :(');
+    }
+  }
+  handlePlayerOut(id:string){
+    window.alert('Player out: '+id);
+    if(id==this.turnId){
+      this.blueYetiService.endTurn();
+    }
+  }
+  getAllMyCards(){
+    const output = [...this.firstRow, ...this.secondRow];
+    if(this.turnId == this.myId){
+      return [...output, ...this.divergentLessSlot, ...this.divergentGreaterSlot, ...this.convergentLessSlot, ...this.convergentGreaterSlot];
+    } else return output;
   }
 
   processFeedback(feedbackData: any){
     //Actions for current player
-    if(this.turnId == this.myId && feedbackData.valid) window.alert("Ügyes!");
+    if(this.turnId == this.myId && feedbackData.valid){
+      window.alert("Ügyes!");
+    }
     if(this.turnId == this.myId && !feedbackData.valid) window.alert(feedbackData.message);
     
     //Actions for everybody
@@ -194,21 +236,30 @@ export class BlueYetiComponent {
     this.drawAllFormulas();
   }
 
-  nextPlayerTurn(playerId: string){
-    //Adjust the number of cards of each player
-    var indexOfGiver = this.players.findIndex(player => player.playerId == playerId);
-    var indexOfReceiver = this.players.findIndex(player => player.playerId == this.turnId);
-    this.players[indexOfGiver].cardNumber--;
-    this.players[indexOfReceiver].cardNumber++;
-
+  nextPlayerTurn(playersData:any){
     //Delete or put back placed center cards
     this.putPlacedCardsBack();
 
     //Switch to next player's turn
-    this.turnId = playerId;
-    var nextGiverIndex = indexOfGiver + 1;
-    if(nextGiverIndex >= this.players.length) nextGiverIndex = 0;
-    this.pullFromId = this.players[nextGiverIndex].playerId;
+    this.turnId = playersData.drawer;
+    this.pullFromId = playersData.drawFrom;
+
+    this.turnPhase = 'draw';
+  }
+
+  endTurn(){
+    this.blueYetiService.endTurn();
+  }
+
+  startPairingPhase(){
+    //Adjust the number of cards of each player
+    var indexOfGiver = this.players.findIndex(player => player.playerId == this.pullFromId);
+    var indexOfReceiver = this.players.findIndex(player => player.playerId == this.turnId);
+    this.players[indexOfGiver].cardNumber--;
+    this.players[indexOfReceiver].cardNumber++;
+
+    this.turnPhase = 'pair';
+
   }
 
   putPlacedCardsBack(){
@@ -225,6 +276,7 @@ export class BlueYetiComponent {
 
   receiveCard(cardData: any){
     var card: SimpleCard = cardData;
+    this.newCardId = card.id;
     var concatHand = [...this.firstRow, ...this.secondRow];
     const randomIndex = Math.floor(Math.random() * (concatHand.length + 1));
     concatHand.splice(randomIndex, 0, card);
@@ -264,8 +316,8 @@ export class BlueYetiComponent {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
-      if(commonCardSlotIds.includes(event.container.id) && (this.turnId != this.myId || event.container.data.length>0)) return;
-      else if(commonCardSlotIds.includes(event.previousContainer.id) && this.turnId != this.myId) return;
+      if(commonCardSlotIds.includes(event.container.id) && (this.turnId != this.myId || event.container.data.length>0 || this.turnPhase != 'pair')) return;
+      else if(commonCardSlotIds.includes(event.previousContainer.id) && (this.turnId != this.myId || this.turnPhase != 'pair')) return;
       transferArrayItem(
         event.previousContainer.data,
         event.container.data,
@@ -299,7 +351,7 @@ export class BlueYetiComponent {
   }
 
   onCardClick(player:Player, clickedIndex: number){
-    if(this.turnId == this.myId && player.playerId == this.pullFromId){
+    if(this.turnId == this.myId && player.playerId == this.pullFromId && this.turnPhase == 'draw'){
       this.blueYetiService.drawCard(clickedIndex, this.myId);
     } 
     else console.log("Cannot pull card from this player");
@@ -336,7 +388,11 @@ export class BlueYetiComponent {
     this.canvasRefs.forEach((canvasRef) => {
       var id = canvasRef.nativeElement.id.split('-')[1];
       var concatHand = [...this.firstRow, ...this.secondRow, ...this.divergentGreaterSlot, ...this.divergentLessSlot, ...this.convergentGreaterSlot, ...this.convergentLessSlot];
-      this.drawFormulaOntoCanvas(document.getElementById(canvasRef.nativeElement.id) as HTMLCanvasElement, concatHand.filter(card => card.id == id)[0].latex, this.CARD_HEIGHT, this.CARD_WIDTH);
+      if(id == this.newCardId){
+        this.drawFormulaOntoCanvas(document.getElementById(canvasRef.nativeElement.id) as HTMLCanvasElement, concatHand.filter(card => card.id == id)[0].latex, this.CARD_HEIGHT, this.CARD_WIDTH, '#E3F7FA');
+      } else{
+        this.drawFormulaOntoCanvas(document.getElementById(canvasRef.nativeElement.id) as HTMLCanvasElement, concatHand.filter(card => card.id == id)[0].latex, this.CARD_HEIGHT, this.CARD_WIDTH);
+      }
     });
   }
 
@@ -353,26 +409,29 @@ export class BlueYetiComponent {
     })
   }
 
-  drawFormulaOntoCanvas(canvas: HTMLCanvasElement, latex: string, height:number, width:number) {
+  drawFormulaOntoCanvas(canvas: HTMLCanvasElement, latex: string, height:number, width:number, backgroundColour: string = 'white') {
     canvas.style.height = height + 'px';
     canvas.style.width = width + 'px';
     canvas.height = height * 3;
     canvas.width = width * 3;
-    var equationImage = new Image();
-    equationImage.addEventListener("load", () => {
+    if(latex=='y'){
       const ctx = canvas.getContext("2d")!;
-      let latexWidth = equationImage.naturalWidth*4;
-      let latexHeight = equationImage.naturalHeight*4;
-      let currentY = canvas.height / 2 - latexHeight / 2;
-      let currentX = canvas.width / 2 - latexWidth / 2;
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      if(latex == 'y')  ctx.drawImage(equationImage, 0, 0, canvas.width, canvas.height);
-      else ctx.drawImage(equationImage, currentX, currentY, Math.min(latexWidth, canvas.width), Math.min(latexHeight, canvas.height));
+      ctx.drawImage(this.yetiImage, 0, 0, canvas.width, canvas.height);
+    } else{
+      var equationImage = new Image();
+      equationImage.addEventListener("load", () => {
+        const ctx = canvas.getContext("2d")!;
+        let latexWidth = equationImage.naturalWidth*4;
+        let latexHeight = equationImage.naturalHeight*4;
+        let currentY = canvas.height / 2 - latexHeight / 2;
+        let currentX = canvas.width / 2 - latexWidth / 2;
+        ctx.fillStyle = backgroundColour;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(equationImage, currentX, currentY, Math.min(latexWidth, canvas.width), Math.min(latexHeight, canvas.height));
 
-    });
-    if(latex == 'y') equationImage.src = '../../assets/yeti.png';
-    else equationImage.src = renderLatex(latex);
+      });
+      equationImage.src = renderLatex(latex);
+    }
 
   }
 

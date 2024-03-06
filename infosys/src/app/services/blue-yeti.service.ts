@@ -3,7 +3,8 @@ import { Subject } from 'rxjs';
 import { Socket, io } from 'socket.io-client';
 import { SimpleCard } from '../blue-yeti/blue-yeti.component';
 
-export type  MessageType = 'init' | 'give' | 'pulled' | 'received' | 'next' | 'put-down' |'move' |'put-back' | 'pair-feedback';
+export type  MessageType = 'init' | 'give' | 'pulled' | 'received' | 'pair-start' | 'next' | 'put-down' |'move' |'put-back' | 'pair-feedback'
+ | 'player-out' | 'game-over';
 export type SpotType = 'div-less-spot' | 'div-greater-spot' | 'conv-less-spot' | 'conv-greater-spot';
 
 interface Message {
@@ -42,8 +43,11 @@ export class BlueYetiService {
     this.socket.on('receivedCard', (cardReceived)=>{
       this.blueyetiSubject.next({type: 'received', data: cardReceived});
     });
-    this.socket.on('nextPlayer', (playerId)=>{
-      this.blueyetiSubject.next({type: 'next', data: playerId});
+    this.socket.on('startPairPhase', ()=>{
+      this.blueyetiSubject.next({type: 'pair-start', data: undefined});
+    });
+    this.socket.on('nextPlayer', (playersData)=>{
+      this.blueyetiSubject.next({type: 'next', data: playersData});
     });
     this.socket.on('placedCard', (placementData)=>{
       this.blueyetiSubject.next({type: 'put-down', data: placementData});
@@ -56,6 +60,12 @@ export class BlueYetiService {
     });
     this.socket.on('pairFeedback', (feedbackData)=>{
       this.blueyetiSubject.next({type: 'pair-feedback', data: feedbackData});
+    });
+    this.socket.on('playerOut', (id)=>{
+      this.blueyetiSubject.next({type: 'player-out', data: id});
+    });
+    this.socket.on('gameOver', (resultData)=>{
+      this.blueyetiSubject.next({type: 'game-over', data: resultData});
     })
   }
 
@@ -65,6 +75,10 @@ export class BlueYetiService {
 
   drawCard(cardIndex: number, userId: string){
     this.socket.emit('draw', {userId: userId, cardIndex: cardIndex});
+  }
+
+  endTurn(){
+    this.socket.emit('endTurn');
   }
 
   placeCard(card: SimpleCard, place: SpotType,  userId: string){

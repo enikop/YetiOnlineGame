@@ -260,3 +260,55 @@ body, html{
 #div-pair-container{
     background-color: var(--mid-blue);
 }
+
+#result-popup{
+    z-index: 3;
+    position: fixed;
+    min-width: fit-content;
+    width: 50%;
+    height: 60%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--mid-blue);
+    border-radius: 1rem;
+    padding: 2rem;
+}
+
+.player-toolstrip{
+    height: fit-content;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    margin-top: 0.2rem
+}
+
+.player-toolstrip .material-icons{
+    color: #f0f0f0;
+}
+
+.player-toolstrip .player-username{
+    margin: 0;
+    margin-right: 0.5rem;
+}
+
+.player-toolstrip button{
+    background-color: var(--mid-blue);
+    border: none;
+    border-radius: 0.2rem;
+    color: #f0f0f0;
+    padding: 0.3rem;
+    text-align: center;
+    text-decoration: none;
+    font-size: 1rem;
+    margin: auto 1rem;
+}
+
+.player-toolstrip button:hover{
+    cursor: pointer;
+    background-color: var(--light-blue);
+    color: var(--dark-blue);
+}

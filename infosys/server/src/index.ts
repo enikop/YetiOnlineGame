@@ -11,7 +11,8 @@ import { CardGroup } from './entity/CardGroup';
 interface SocketUser{
     socketId: string;
     playerId: string;
-    userName: string,
+    userName: string;
+    inGame: boolean;
     currentHand: CardExtended[];
 }
 
@@ -21,6 +22,7 @@ interface Game {
     full: boolean;
     players: SocketUser[];
     gameState: GameState;
+    result:string[];
 }
 
 interface CardExtended {
@@ -52,7 +54,7 @@ interface PairingNotification{
 
 AppDataSource.initialize().then(async () => {
     const MAX_PLAYER_NUMBER = 4;
-    const  DECK_SIZE: number = 29;
+    const  DECK_SIZE: number = 5;
     const app = express();
     app.use(express.json());
     app.use('/api', getRoutes());
@@ -70,7 +72,7 @@ AppDataSource.initialize().then(async () => {
     io.on("connection", (socket) => {
         const deckId = socket.handshake.query.deckId as string;
         const userId = socket.handshake.query.userId as string;
-        const socketUser : SocketUser = {playerId: userId, socketId: socket.id, userName: "Player"+userId, currentHand: []};
+        const socketUser : SocketUser = {playerId: userId, socketId: socket.id, userName: "Player"+userId,  inGame:true, currentHand: []};
         const gameId = handleJoin(deckId, socketUser);
         socket.join('room'+gameId);
         const game = games.filter(game=> game.id == gameId)[0];
@@ -82,11 +84,8 @@ AppDataSource.initialize().then(async () => {
         socket.on('draw', (drawData) => {
             const game = games.filter(game=> game.players.filter((player => player.socketId == socket.id)).length > 0)[0];
             const playerIndex = game.players.findIndex(player => player.socketId == socket.id);
-            var nextPlayerIndex = playerIndex + 1;
-            if(nextPlayerIndex >= game.players.length){
-                nextPlayerIndex = 0;
-            }
-            var nextPlayer = game.players[nextPlayerIndex];
+            
+            var nextPlayer = getNextPlayer(playerIndex, game);
 
             io.to(nextPlayer.socketId).emit('giveCard', drawData);
         })
@@ -95,35 +94,89 @@ AppDataSource.initialize().then(async () => {
             const game = games.filter(game=> game.players.filter((player => player.socketId == socket.id)).length > 0)[0];
             const playerIndex = game.players.findIndex(player => player.socketId == socket.id);
             const giver = game.players[playerIndex];
-            var prevPlayerIndex = playerIndex - 1;
-            if(prevPlayerIndex < 0){
-                prevPlayerIndex = game.players.length-1;
-            }
-            const receiver = game.players[prevPlayerIndex];
+            const receiver = getPrecedentPlayer(playerIndex, game);
             const cardIndex = giver.currentHand.findIndex(playerCard => playerCard.id == card.id);
             const cardPassed = giver.currentHand[cardIndex];
             receiver.currentHand.push(cardPassed);
             io.to(receiver.socketId).emit('receivedCard', {id: cardPassed.id, latex:cardPassed.latex });
             giver.currentHand.splice(cardIndex, 1);
             io.to(giver.socketId).emit('pulledCard');
-            io.to('room'+game.id).emit('nextPlayer', giver.playerId);
+            if(giver.currentHand.length == 0){
+                giver.inGame = false;
+                game.result.push(giver.playerId);
+                io.to('room'+game.id).emit('playerOut', giver.playerId);
+                const inGamePlayers = game.players.filter(p => p.inGame);
+                if(inGamePlayers.length==1){
+                    io.to('room'+game.id).emit('gameOver', {'result': game.result, 'loser':inGamePlayers[0].playerId})
+                }
+            }
+
+            io.to('room'+game.id).emit('startPairPhase');
         })
+
+        socket.on('endTurn', ()=>{
+            const game = games.filter(game=> game.players.filter((player => player.socketId == socket.id)).length > 0)[0];
+            const playerIndex = game.players.findIndex(player => player.socketId == socket.id);
+            var nextDrawer = getNextPlayer(playerIndex, game);
+            const nextIndex = game.players.findIndex(player => player.socketId == nextDrawer.socketId);
+            var nextGiver = getNextPlayer(nextIndex, game);
+            io.to('room'+game.id).emit('nextPlayer', {drawer: nextDrawer.playerId, drawFrom:nextGiver.playerId});
+            game.gameState = {
+                convLess: undefined,
+                convGreater: undefined,
+                divLess: undefined,
+                divGreater: undefined
+            }
+        })
+        //TODO: nextPlayer emit io.to('room'+game.id).emit('nextPlayer', {drawer: giver.playerId, drawFrom:nextGiver.playerId});
 
         socket.on('putDown', (putDownData) =>{
             const game = games.filter(game=> game.players.filter((player => player.socketId == socket.id)).length > 0)[0];
-            const currentCard = game.players.filter(player => player.socketId == socket.id)[0].currentHand.filter(c => c.id.toString() == putDownData.card.id)[0];
+            const player = game.players.filter((player => player.socketId == socket.id))[0];
+            const currentCard = player.currentHand.filter(c => c.id.toString() == putDownData.card.id)[0];
             placeCardInSpot(game, putDownData.cardPlacement, currentCard);
             io.to('room'+game.id).emit('placedCard', putDownData);
-            checkPairs(game);
+            const checkResult = checkPairs(game);
+            if(checkResult.valid){
+                const lessIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.less.id)[0]);
+                player.currentHand.splice(lessIndex, 1);
+                const greaterIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.greater.id)[0]);
+                player.currentHand.splice(greaterIndex, 1);
+            }
+            if(player.currentHand.length == 0){
+                player.inGame = false;
+                game.result.push(player.playerId);
+                io.to('room'+game.id).emit('playerOut', player.playerId);
+                const inGamePlayers = game.players.filter(p => p.inGame);
+                if(inGamePlayers.length==1){
+                    io.to('room'+game.id).emit('gameOver', {'result': game.result, 'loser':inGamePlayers[0].playerId})
+                }
+            }
         })
 
         socket.on('moveAway', (moveData) =>{
             const game = games.filter(game=> game.players.filter((player => player.socketId == socket.id)).length > 0)[0];
-            const currentCard = game.players.filter(player => player.socketId == socket.id)[0].currentHand.filter(c => c.id.toString() == moveData.card.id)[0];
+            const player = game.players.filter((player => player.socketId == socket.id))[0];
+            const currentCard = player.currentHand.filter(c => c.id.toString() == moveData.card.id)[0];
             placeCardInSpot(game, moveData.newPlacement, currentCard);
             deleteCardFromSpot(game, moveData.previousPlacement);
             io.to('room'+game.id).emit('movedCard', moveData);
-            checkPairs(game);
+            const checkResult = checkPairs(game);
+            if(checkResult.valid){
+                const lessIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.less.id)[0]);
+                const greaterIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.greater.id)[0]);
+                player.currentHand.splice(lessIndex, 1);
+                player.currentHand.splice(greaterIndex, 1);
+            }
+            if(player.currentHand.length == 0){
+                player.inGame = false;
+                game.result.push(player.playerId);
+                io.to('room'+game.id).emit('playerOut', player.playerId);
+                const inGamePlayers = game.players.filter(p => p.inGame);
+                if(inGamePlayers.length==1){
+                    io.to('room'+game.id).emit('gameOver', {'result': game.result, 'loser':inGamePlayers[0].playerId})
+                }
+            }
         })
 
         socket.on('putBack', (putBackData) =>{
@@ -150,9 +203,8 @@ AppDataSource.initialize().then(async () => {
     });
 
     function checkPairs(game: Game){
-        console.log('pair check')
         const gameState = game.gameState;
-        var res;
+        var res: PairingNotification = {valid:false, less:undefined, greater:undefined};
         if(gameState.divLess && gameState.divGreater){
             res = checkPair(gameState.divLess, gameState.divGreater, false)
             if(res.valid){
@@ -160,7 +212,6 @@ AppDataSource.initialize().then(async () => {
                 gameState.divGreater = undefined;
             }
             io.to('room'+game.id).emit('pairFeedback', res);
-            console.log('pair check div feedb')
         } 
         else if(gameState.convLess && gameState.convGreater){
             res = checkPair(gameState.convLess, gameState.convGreater, true)
@@ -169,8 +220,8 @@ AppDataSource.initialize().then(async () => {
                 gameState.convGreater = undefined;
             }
             io.to('room'+game.id).emit('pairFeedback', res);
-            console.log('pair check conv feedb')
         }
+        return res;
     }
 
     function checkPair(less: CardExtended, greater: CardExtended, convergent: boolean): PairingNotification{
@@ -261,7 +312,8 @@ AppDataSource.initialize().then(async () => {
                 convGreater: undefined,
                 divLess: undefined,
                 divGreater: undefined
-            }
+            },
+            result:[],
         }
         games.push(newGame);
         return newId;
@@ -365,6 +417,34 @@ AppDataSource.initialize().then(async () => {
         }
         return shuffledArray;
     }; 
+
+    function getPrecedentPlayer(playerIndex: number, game: Game){
+        var curPlayerIndex = playerIndex;
+        var previousPlayer: SocketUser;
+        do{
+            var prevPlayerIndex = curPlayerIndex - 1;
+            if (prevPlayerIndex < 0) {
+                prevPlayerIndex = game.players.length - 1;
+            }
+            previousPlayer = game.players[prevPlayerIndex];
+            curPlayerIndex = prevPlayerIndex;
+        } while(!previousPlayer.inGame);
+        return previousPlayer;
+    }
+
+    function getNextPlayer(playerIndex: number, game: Game){
+        var curPlayerIndex = playerIndex;
+        var nextPlayer: SocketUser;
+        do{
+            var nextPlayerIndex = curPlayerIndex + 1;
+            if(nextPlayerIndex >= game.players.length){
+                nextPlayerIndex = 0;
+            }
+            nextPlayer = game.players[nextPlayerIndex];
+            curPlayerIndex = nextPlayerIndex;
+        } while(!nextPlayer.inGame);
+        return nextPlayer;
+    }
     
 
    /* console.log("Inserting a new user into the database...")
@@ -382,3 +462,4 @@ AppDataSource.initialize().then(async () => {
     //console.log("Here you can setup and run express / fastify / any other framework.")
 
 }).catch(error => console.log(error))
+

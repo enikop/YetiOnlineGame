@@ -1,6 +1,9 @@
 <div class="container">
     <div class="player-top">
-        <div class="player-username" [class.highlighted-player]="turnId==players[2].playerId">{{players[2].userName}} <span *ngIf="turnId==players[2].playerId" class="material-icons">pending</span></div>
+        <div class="player-toolstrip">
+            <div class="player-username" [class.highlighted-player]="turnId==players[2].playerId">{{players[2].userName}}</div>
+            <span *ngIf="turnId==players[2].playerId" class="material-icons">pending</span>
+        </div>
         <div class="player-hand other-hand">
             <div class="others-card" *ngFor="let index of repeatArray(players[2].cardNumber)" (mouseover)="onCardHover($event)"
                 (mouseleave)="onCardLeave($event)" (click)="onCardClick(players[2], index)"></div>
@@ -47,7 +50,13 @@
         </div>
     </div>
     <div class="player-bottom">
-        <div class="player-username" [class.highlighted-player]="turnId==myId">{{players[0].userName}} <span *ngIf="turnId==myId" class="material-icons">pending</span></div>
+        <div class="player-toolstrip">
+            <div class="player-username" [class.highlighted-player]="turnId==myId">
+                {{players[0].userName}} 
+            </div>
+            <span *ngIf="turnId==myId" class="material-icons">pending</span>
+            <button  *ngIf="turnPhase == 'pair' && turnId == myId" (click) = "endTurn()">End turn</button>
+        </div>
         <div class="player-hand player-current">
             <div>
                 <div cdkDropList cdkDropListOrientation="horizontal" #firstRowList="cdkDropList"
@@ -78,17 +87,29 @@
         </div>
     </div>
     <div class="player-left">
-        <div class="player-username" [class.highlighted-player]="turnId==players[3].playerId">{{players[3].userName}} <span *ngIf="turnId==players[3].playerId" class="material-icons">pending</span></div>
+        <div class="player-toolstrip">
+            <div class="player-username" [class.highlighted-player]="turnId==players[3].playerId">{{players[3].userName}}</div>
+            <span *ngIf="turnId==players[3].playerId" class="material-icons">pending</span>
+        </div>
         <div class="player-hand other-hand">
             <div class="others-card" *ngFor="let index of repeatArray(players[3].cardNumber)" (mouseover)="onCardHover($event)"
                 (mouseleave)="onCardLeave($event)" (click)="onCardClick(players[3], index)"></div>
         </div>
     </div>
     <div class="player-right">
-        <div class="player-username" [class.highlighted-player]="turnId==players[1].playerId">{{players[1].userName}} <span *ngIf="turnId==players[1].playerId" class="material-icons">pending</span></div>
+        <div class="player-toolstrip">
+            <div class="player-username" [class.highlighted-player]="turnId==players[1].playerId">{{players[1].userName}}</div>
+            <span *ngIf="turnId==players[1].playerId" class="material-icons">pending</span>
+        </div>
         <div class="player-hand other-hand">
             <div class="others-card" *ngFor="let index of repeatArray(players[1].cardNumber)" (mouseover)="onCardHover($event)"
                 (mouseleave)="onCardLeave($event)" (click)="onCardClick(players[1], index)"></div>
+        </div>
+    </div>
+    <div id="result-popup" *ngIf="result.length>0">
+        <div>Results:</div>
+        <div *ngFor="let playerId of result; let i = index">
+            <div>{{i+1}}. {{playerId}}</div>
         </div>
     </div>
     <div id="sidebar" [class.active]="isSidebarActive">
