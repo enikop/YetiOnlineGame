@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "infosys": {
+    "yetigame": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/infosys",
+            "outputPath": "dist/yetigame",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -60,10 +60,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "infosys:build:production"
+              "buildTarget": "yetigame:build:production"
             },
             "development": {
-              "buildTarget": "infosys:build:development"
+              "buildTarget": "yetigame:build:development"
             }
           },
           "options": {
@@ -74,7 +74,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "buildTarget": "infosys:build"
+            "buildTarget": "yetigame:build"
           }
         },
         "test": {

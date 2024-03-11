@@ -5,7 +5,7 @@
             <span *ngIf="turnId==players[2].playerId" class="material-icons">pending</span>
         </div>
         <div class="player-hand other-hand">
-            <div class="others-card" *ngFor="let index of repeatArray(players[2].cardNumber)" (mouseover)="onCardHover($event)"
+            <div  [class.drawable-card]="turnId==myId && turnPhase=='draw' && pullFromId==players[2].playerId" class="others-card" *ngFor="let index of repeatArray(players[2].cardNumber)" (mouseover)="onCardHover($event)"
                 (mouseleave)="onCardLeave($event)" (click)="onCardClick(players[2], index)"></div>
         </div>
     </div>
@@ -92,7 +92,7 @@
             <span *ngIf="turnId==players[3].playerId" class="material-icons">pending</span>
         </div>
         <div class="player-hand other-hand">
-            <div class="others-card" *ngFor="let index of repeatArray(players[3].cardNumber)" (mouseover)="onCardHover($event)"
+            <div [class.drawable-card]="turnId==myId && turnPhase=='draw' && pullFromId==players[3].playerId" class="others-card" *ngFor="let index of repeatArray(players[3].cardNumber)" (mouseover)="onCardHover($event)"
                 (mouseleave)="onCardLeave($event)" (click)="onCardClick(players[3], index)"></div>
         </div>
     </div>
@@ -102,7 +102,7 @@
             <span *ngIf="turnId==players[1].playerId" class="material-icons">pending</span>
         </div>
         <div class="player-hand other-hand">
-            <div class="others-card" *ngFor="let index of repeatArray(players[1].cardNumber)" (mouseover)="onCardHover($event)"
+            <div  [class.drawable-card]="turnId==myId && turnPhase=='draw' && pullFromId==players[1].playerId" class="others-card" *ngFor="let index of repeatArray(players[1].cardNumber)" (mouseover)="onCardHover($event)"
                 (mouseleave)="onCardLeave($event)" (click)="onCardClick(players[1], index)"></div>
         </div>
     </div>

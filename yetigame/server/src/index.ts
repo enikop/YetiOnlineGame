@@ -101,7 +101,7 @@ AppDataSource.initialize().then(async () => {
             io.to(receiver.socketId).emit('receivedCard', {id: cardPassed.id, latex:cardPassed.latex });
             giver.currentHand.splice(cardIndex, 1);
             io.to(giver.socketId).emit('pulledCard');
-            if(giver.currentHand.length == 0){
+            if(giver.currentHand.length==0){
                 giver.inGame = false;
                 game.result.push(giver.playerId);
                 io.to('room'+game.id).emit('playerOut', giver.playerId);

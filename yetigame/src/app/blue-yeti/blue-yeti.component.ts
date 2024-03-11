@@ -264,8 +264,12 @@ export class BlueYetiComponent {
 
   putPlacedCardsBack(){
     var allCards = [...this.firstRow, ...this.secondRow];
+    const centerCards = [...this.divergentLessSlot, ...this.divergentGreaterSlot, ...this.convergentLessSlot, ...this.convergentGreaterSlot];
     if(this.turnId == this.myId){
-      allCards = [...allCards, ...this.divergentLessSlot, ...this.divergentGreaterSlot, ...this.convergentLessSlot, ...this.convergentGreaterSlot];
+      allCards = [...allCards, ...centerCards];
+    } else {
+      const currentPlayer = this.players.filter(player => player.playerId == this.turnId)[0];
+      currentPlayer.cardNumber += centerCards.length;
     }
     this.divergentLessSlot.splice(0);
     this.divergentGreaterSlot.splice(0);
@@ -286,6 +290,9 @@ export class BlueYetiComponent {
   giveCard(drawData:any){
     this.drawIndex = drawData.cardIndex;
     var concatHand = [...this.firstRow, ...this.secondRow];
+    if(concatHand[this.drawIndex].id == this.newCardId){
+      this.newCardId = '';
+    }
     this.blueYetiService.giveCard(concatHand[this.drawIndex]);
   }
 
@@ -389,7 +396,7 @@ export class BlueYetiComponent {
       var id = canvasRef.nativeElement.id.split('-')[1];
       var concatHand = [...this.firstRow, ...this.secondRow, ...this.divergentGreaterSlot, ...this.divergentLessSlot, ...this.convergentGreaterSlot, ...this.convergentLessSlot];
       if(id == this.newCardId){
-        this.drawFormulaOntoCanvas(document.getElementById(canvasRef.nativeElement.id) as HTMLCanvasElement, concatHand.filter(card => card.id == id)[0].latex, this.CARD_HEIGHT, this.CARD_WIDTH, '#E3F7FA');
+        this.drawFormulaOntoCanvas(document.getElementById(canvasRef.nativeElement.id) as HTMLCanvasElement, concatHand.filter(card => card.id == id)[0].latex, this.CARD_HEIGHT, this.CARD_WIDTH, true);
       } else{
         this.drawFormulaOntoCanvas(document.getElementById(canvasRef.nativeElement.id) as HTMLCanvasElement, concatHand.filter(card => card.id == id)[0].latex, this.CARD_HEIGHT, this.CARD_WIDTH);
       }
@@ -409,7 +416,7 @@ export class BlueYetiComponent {
     })
   }
 
-  drawFormulaOntoCanvas(canvas: HTMLCanvasElement, latex: string, height:number, width:number, backgroundColour: string = 'white') {
+  drawFormulaOntoCanvas(canvas: HTMLCanvasElement, latex: string, height:number, width:number, isNew:boolean = false) {
     canvas.style.height = height + 'px';
     canvas.style.width = width + 'px';
     canvas.height = height * 3;
@@ -425,8 +432,12 @@ export class BlueYetiComponent {
         let latexHeight = equationImage.naturalHeight*4;
         let currentY = canvas.height / 2 - latexHeight / 2;
         let currentX = canvas.width / 2 - latexWidth / 2;
-        ctx.fillStyle = backgroundColour;
+        ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if(isNew){
+          ctx.fillStyle = '#0B1A41';
+          ctx.fillRect(0,0,canvas.width/15, canvas.height);
+        }
         ctx.drawImage(equationImage, currentX, currentY, Math.min(latexWidth, canvas.width), Math.min(latexHeight, canvas.height));
 
       });
