@@ -6,7 +6,6 @@ import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from 
 import { CommonModule } from '@angular/common';
 import { renderLatex } from '../latexhandler';
 import { Subscription } from 'rxjs';
-import { ServerSocketMessage } from '../../../models';
 
 export interface SimpleCard{
   id: string,
@@ -105,43 +104,39 @@ export class BlueYetiComponent {
     this.myId = Math.floor(Math.random() * 100).toString(); //temp line
     this.blueYetiService.connect(deckId, this.myId);
     this.handSubscription = this.blueYetiService.getObservable().subscribe((received) => {
-      if(received.type == ServerSocketMessage.InitHand){
+      if(received.type == 'init'){
         this.refreshFullGameState(received.data);
-      } else if(received.type == ServerSocketMessage.PreviewCardDraw){
+      } else if(received.type == 'give'){
         this.giveCard(received.data);
-      } else if(received.type == ServerSocketMessage.DrawCard){
+      } else if(received.type == 'pulled'){
         this.pullCard();
-      } else if(received.type == ServerSocketMessage.SendCard){
+      } else if(received.type == 'received'){
         this.receiveCard(received.data);
-      } else if(received.type == ServerSocketMessage.StartPairing){
+      } else if(received.type == 'pair-start'){
         this.startPairingPhase();
-      } else if(received.type == ServerSocketMessage.StartTurn){
+      } else if(received.type == 'next'){
         this.nextPlayerTurn(received.data);
-      } else if(received.type == ServerSocketMessage.PutDown){
+      } else if(received.type == 'put-down'){
         this.placeCardDown(received.data);
-      } else if(received.type == ServerSocketMessage.PutDownMove){
+      } else if(received.type == 'move'){
         this.moveCard(received.data);
-      }else if(received.type == ServerSocketMessage.PickUp){
+      }else if(received.type == 'put-back'){
         this.placeCardBack(received.data);
-      }else if(received.type == ServerSocketMessage.PairFeedback){
+      }else if(received.type == 'pair-feedback'){
         this.processFeedback(received.data);
-      }else if(received.type == ServerSocketMessage.PlayerOut){
+      }else if(received.type == 'player-out'){
         this.handlePlayerOut(received.data);
-      }else if(received.type == ServerSocketMessage.EndGame){
+      }else if(received.type == 'game-over'){
         this.handleGameOver(received.data);
       }
     });
   }
 
   handleGameOver(resultData: any){
-    if(resultData.complete){
-      this.result = resultData.result;
-      this.result.push(resultData.loser);
-      if(resultData.loser == this.myId){
-        window.alert('You lost :(');
-      }
-    } else {
-      window.alert('Game compromised.');
+    this.result = resultData.result;
+    this.result.push(resultData.loser);
+    if(resultData.loser == this.myId){
+      window.alert('You lost :(');
     }
   }
   handlePlayerOut(id:string){
@@ -163,7 +158,7 @@ export class BlueYetiComponent {
       window.alert("Ügyes!");
     }
     if(this.turnId == this.myId && !feedbackData.valid) window.alert(feedbackData.message);
-
+    
     //Actions for everybody
     if(feedbackData.valid){
       if(feedbackData.convergent){
@@ -194,19 +189,19 @@ export class BlueYetiComponent {
     this.players.filter(player => player.playerId == placementData.userId)[0].cardNumber--;
     switch(placementData.cardPlacement){
       case 'div-less-spot': {
-        this.divergentLessSlot.push(placementData.card);
+        this.divergentLessSlot.push(placementData.card); 
         break;
       }
       case 'div-greater-spot': {
-        this.divergentGreaterSlot.push(placementData.card);
+        this.divergentGreaterSlot.push(placementData.card); 
         break;
       }
       case 'conv-less-spot': {
-        this.convergentLessSlot.push(placementData.card);
+        this.convergentLessSlot.push(placementData.card); 
         break;
       }
       case 'conv-greater-spot': {
-        this.convergentGreaterSlot.push(placementData.card);
+        this.convergentGreaterSlot.push(placementData.card); 
         break;
       }
     }
@@ -221,19 +216,19 @@ export class BlueYetiComponent {
     //If not, place the card in the corresponding spot
     switch(placementData.cardPlacement){
       case 'div-less-spot': {
-        this.divergentLessSlot.splice(0);
+        this.divergentLessSlot.splice(0); 
         break;
       }
       case 'div-greater-spot': {
-        this.divergentGreaterSlot.splice(0);
+        this.divergentGreaterSlot.splice(0); 
         break;
       }
       case 'conv-less-spot': {
-        this.convergentLessSlot.splice(0);
+        this.convergentLessSlot.splice(0); 
         break;
       }
       case 'conv-greater-spot': {
-        this.convergentGreaterSlot.splice(0);
+        this.convergentGreaterSlot.splice(0); 
         break;
       }
     }
@@ -365,11 +360,11 @@ export class BlueYetiComponent {
   onCardClick(player:Player, clickedIndex: number){
     if(this.turnId == this.myId && player.playerId == this.pullFromId && this.turnPhase == 'draw'){
       this.blueYetiService.drawCard(clickedIndex, this.myId);
-    }
+    } 
     else console.log("Cannot pull card from this player");
   }
 
-
+  
   refreshFullGameState(hand:any){
     var concatHand: SimpleCard[] = hand.hand;
     //get players and shift array so that the current player is the first (order is preserved)
@@ -389,7 +384,7 @@ export class BlueYetiComponent {
     this.turnId = players[0].playerId;
     const index = players.findIndex(player => player.playerId == this.myId.toString());
     if (index != -1) {
-        this.players = players.slice(index).concat(players.slice(0, index));
+        this.players = players.slice(index).concat(players.slice(0, index));    
         this.pullFromId = players[1].playerId;
     } else {
         //TODO: exception

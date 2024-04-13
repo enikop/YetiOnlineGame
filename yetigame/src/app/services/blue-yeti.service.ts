@@ -2,13 +2,12 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { Socket, io } from 'socket.io-client';
 import { SimpleCard } from '../blue-yeti/blue-yeti.component';
+import { ClientSocketMessage, ServerSocketMessage } from '../../../models';
 
-export type  MessageType = 'init' | 'give' | 'pulled' | 'received' | 'pair-start' | 'next' | 'put-down' |'move' |'put-back' | 'pair-feedback'
- | 'player-out' | 'game-over';
 export type SpotType = 'div-less-spot' | 'div-greater-spot' | 'conv-less-spot' | 'conv-greater-spot';
 
 interface Message {
-  type: MessageType,
+  type: ServerSocketMessage,
   data: any
 }
 
@@ -22,75 +21,75 @@ export class BlueYetiService {
   constructor() {
    }
   connect(deckId:number, userId:string){
-    this.socket = io("http://localhost:3000", {query: {
+    this.socket = io({query: {
       deckId: deckId,
       userId: userId,
     }});
 
-    this.socket.on('startGame', (gameId) =>{
+    this.socket.on(ServerSocketMessage.StartGame, (gameId) =>{
       const id = gameId;
       console.log(gameId+' game starts');
     });
-    this.socket.on('deckInit', (hand) =>{
-      this.blueyetiSubject.next({type: 'init', data: JSON.parse(hand)});
+    this.socket.on(ServerSocketMessage.InitHand, (hand) =>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.InitHand, data: JSON.parse(hand)});
     });
-    this.socket.on('giveCard', (drawData)=>{
-      this.blueyetiSubject.next({type: 'give', data: drawData});
+    this.socket.on(ServerSocketMessage.PreviewCardDraw, (drawData)=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.PreviewCardDraw, data: drawData});
     });
-    this.socket.on('pulledCard', ()=>{
-      this.blueyetiSubject.next({type: 'pulled', data: undefined});
+    this.socket.on(ServerSocketMessage.DrawCard, ()=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.DrawCard, data: undefined});
     });
-    this.socket.on('receivedCard', (cardReceived)=>{
-      this.blueyetiSubject.next({type: 'received', data: cardReceived});
+    this.socket.on(ServerSocketMessage.SendCard, (cardReceived)=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.SendCard, data: cardReceived});
     });
-    this.socket.on('startPairPhase', ()=>{
-      this.blueyetiSubject.next({type: 'pair-start', data: undefined});
+    this.socket.on(ServerSocketMessage.StartPairing, ()=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.StartPairing, data: undefined});
     });
-    this.socket.on('nextPlayer', (playersData)=>{
-      this.blueyetiSubject.next({type: 'next', data: playersData});
+    this.socket.on(ServerSocketMessage.StartTurn, (playersData)=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.StartTurn, data: playersData});
     });
-    this.socket.on('placedCard', (placementData)=>{
-      this.blueyetiSubject.next({type: 'put-down', data: placementData});
+    this.socket.on(ServerSocketMessage.PutDown, (placementData)=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.PutDown, data: placementData});
     });
-    this.socket.on('movedCard', (placementData)=>{
-      this.blueyetiSubject.next({type: 'move', data: placementData});
+    this.socket.on(ServerSocketMessage.PutDownMove, (placementData)=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.PutDownMove, data: placementData});
     });
-    this.socket.on('replacedCard', (placementData)=>{
-      this.blueyetiSubject.next({type: 'put-back', data: placementData});
+    this.socket.on(ServerSocketMessage.PickUp, (placementData)=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.PickUp, data: placementData});
     });
-    this.socket.on('pairFeedback', (feedbackData)=>{
-      this.blueyetiSubject.next({type: 'pair-feedback', data: feedbackData});
+    this.socket.on(ServerSocketMessage.PairFeedback, (feedbackData)=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.PairFeedback, data: feedbackData});
     });
-    this.socket.on('playerOut', (id)=>{
-      this.blueyetiSubject.next({type: 'player-out', data: id});
+    this.socket.on(ServerSocketMessage.PlayerOut, (id)=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.PlayerOut, data: id});
     });
-    this.socket.on('gameOver', (resultData)=>{
-      this.blueyetiSubject.next({type: 'game-over', data: resultData});
+    this.socket.on(ServerSocketMessage.EndGame, (resultData)=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.EndGame, data: resultData});
     })
   }
 
   giveCard(card: SimpleCard){
-    this.socket.emit('give', card);
+    this.socket.emit(ClientSocketMessage.SendCard, card);
   }
 
   drawCard(cardIndex: number, userId: string){
-    this.socket.emit('draw', {userId: userId, cardIndex: cardIndex});
+    this.socket.emit(ClientSocketMessage.ChooseCard, {userId: userId, cardIndex: cardIndex});
   }
 
   endTurn(){
-    this.socket.emit('endTurn');
+    this.socket.emit(ClientSocketMessage.EndTurn);
   }
 
   placeCard(card: SimpleCard, place: SpotType,  userId: string){
-    this.socket.emit('putDown', {userId: userId, card: card, cardPlacement: place})
+    this.socket.emit(ClientSocketMessage.PutDown, {userId: userId, card: card, cardPlacement: place})
   }
 
   moveCard(card: SimpleCard, prevPlace: SpotType, newPlace:SpotType, userId:string){
-    this.socket.emit('moveAway', {userId: userId, card: card, previousPlacement: prevPlace, newPlacement: newPlace})
+    this.socket.emit(ClientSocketMessage.PutDownMove, {userId: userId, card: card, previousPlacement: prevPlace, newPlacement: newPlace})
   }
 
   replaceCard(card: SimpleCard, place: SpotType,  userId: string){
-    this.socket.emit('putBack', {userId: userId, card: card, cardPlacement: place})
+    this.socket.emit(ClientSocketMessage.PickUp, {userId: userId, card: card, cardPlacement: place})
   }
 
   getObservable() {

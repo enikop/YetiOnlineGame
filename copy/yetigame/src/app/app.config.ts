@@ -1,0 +1,15 @@
+import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
+import { HttpClientModule } from '@angular/common/http';
+
+import { routes } from './app.routes';
+import { CardService } from './services/card.service';
+import { DeckService } from './services/deck.service';
+import { BlueYetiService } from './services/blue-yeti.service';
+import { CardGroupService } from './services/card-group.service';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+
+export const appConfig: ApplicationConfig = {
+  providers: [provideRouter(routes), importProvidersFrom(HttpClientModule, CardService, BrowserModule, DeckService, BlueYetiService, CardGroupService), provideAnimationsAsync()],
+};

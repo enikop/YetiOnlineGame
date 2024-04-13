@@ -1,0 +1,14 @@
+/* You can add global styles to this file, and also import other style files */
+html, body{
+    margin: 0px;
+    padding: 0px;
+    height: 100%;
+    font-size: max(1vw, 11pt);
+    font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    --dark-blue: #001E6C;
+    --mid-blue: #5089C6;
+    --light-blue: #88AED8;
+}
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
