@@ -87,7 +87,7 @@ export class SocketHandler {
         const currentCard = player.currentHand.filter(c => c.id.toString() == putDownData.card.id)[0];
         this.placeCardInSpot(game, putDownData.cardPlacement, currentCard);
         this.io.to('room' + game.id).emit(ServerSocketMessage.PutDown, putDownData);
-        const checkResult = checkPairs(game);
+        const checkResult = this.checkPairs(game);
         if (checkResult.valid) {
           const lessIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.less.id)[0]);
           player.currentHand.splice(lessIndex, 1);
@@ -112,7 +112,7 @@ export class SocketHandler {
         this.placeCardInSpot(game, moveData.newPlacement, currentCard);
         this.deleteCardFromSpot(game, moveData.prevthis.iousPlacement);
         this.io.to('room' + game.id).emit(ServerSocketMessage.PutDownMove, moveData);
-        const checkResult = checkPairs(game);
+        const checkResult = this.checkPairs(game);
         if (checkResult.valid) {
           const lessIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.less.id)[0]);
           const greaterIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.greater.id)[0]);
@@ -150,29 +150,8 @@ export class SocketHandler {
         //TODO: robot player?
       });
     });
-
-    function checkPairs(game: Game) {
-      const gameState = game.gameState;
-      var res: PairingNotification = { valid: false, less: undefined, greater: undefined };
-      if (gameState.divLess && gameState.divGreater) {
-        res = this.checkPair(gameState.divLess, gameState.divGreater, false)
-        if (res.valid) {
-          gameState.divLess = undefined;
-          gameState.divGreater = undefined;
-        }
-        this.io.to('room' + game.id).emit(ServerSocketMessage.PairFeedback, res);
-      }
-      else if (gameState.convLess && gameState.convGreater) {
-        res = this.checkPair(gameState.convLess, gameState.convGreater, true)
-        if (res.valid) {
-          gameState.convLess = undefined;
-          gameState.convGreater = undefined;
-        }
-        this.io.to('room' + game.id).emit('pairFeedback', res);
-      }
-      return res;
-    }
   }
+
   checkPairs(game: Game) {
     const gameState = game.gameState;
     var res: PairingNotification = { valid: false, less: undefined, greater: undefined };
