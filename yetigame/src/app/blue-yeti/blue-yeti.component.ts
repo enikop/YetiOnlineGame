@@ -35,6 +35,10 @@ interface Pair{
   styleUrl: './blue-yeti.component.css'
 })
 export class BlueYetiComponent {
+  private pairing_time = 60;
+  private drawing_time = 20;
+  private isTimerResetting = false;
+  timer : number = this.drawing_time;
   DECK_SIZE: number = 29;
   CARD_WIDTH: number = 210;
   CARD_HEIGHT: number = 140;
@@ -94,8 +98,25 @@ export class BlueYetiComponent {
     //load resources then initialize game
     this.yetiImage.addEventListener("load", () => {
       this.initializeGame();
+      const interval = setInterval(() => {
+        if(this.isTimerResetting){
+          this.setTimer();
+        }
+        if (--this.timer <= 0) {
+          this.setTimer();
+          //clearInterval(interval);
+        }
+    }, 1000);
     });
     this.yetiImage.src = '../../assets/yeti.png';
+  }
+
+  setTimer(){
+    if(this.turnPhase == 'draw'){
+      this.timer = this.drawing_time;
+    } else {
+      this.timer = this.pairing_time;
+    }
   }
 
   initializeGame(){

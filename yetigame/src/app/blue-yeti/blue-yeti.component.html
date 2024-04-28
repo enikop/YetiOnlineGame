@@ -1,4 +1,7 @@
 <div class="container">
+    <div class="timer" [class.timer-low]="timer < 5">
+      {{timer}}
+    </div>
     <div class="player-top">
         <div class="player-toolstrip">
             <div class="player-username" [class.highlighted-player]="turnId==players[2].playerId">{{players[2].userName}}</div>
@@ -52,7 +55,7 @@
     <div class="player-bottom">
         <div class="player-toolstrip">
             <div class="player-username" [class.highlighted-player]="turnId==myId">
-                {{players[0].userName}} 
+                {{players[0].userName}}
             </div>
             <span *ngIf="turnId==myId" class="material-icons">pending</span>
             <button  *ngIf="turnPhase == 'pair' && turnId == myId" (click) = "endTurn()">End turn</button>
@@ -130,5 +133,5 @@
         </div>
         <div id="sidebar-button" (click)="toggleSidebar()"><span class="material-icons">history</span></div>
     </div>
-    
+
 </div>

@@ -11,7 +11,7 @@ export class SocketHandler {
 
   private io: Server;
   private MAX_PLAYER_NUMBER = 4;
-  private DECK_SIZE: number = 5;
+  private DECK_SIZE: number = 28;
   private games: Game[] = [];
 
   constructor(httpServer: HttpServer<typeof IncomingMessage, typeof ServerResponse> | Partial<ServerOptions>) {
