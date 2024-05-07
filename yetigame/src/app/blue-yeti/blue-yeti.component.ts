@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, QueryList, ViewChildren } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
 import { BlueYetiService, SpotType } from '../services/blue-yeti.service';
 import { ActivatedRoute } from '@angular/router';
 import { CardDTO} from '../models/dto';
@@ -34,11 +34,8 @@ interface Pair{
   templateUrl: './blue-yeti.component.html',
   styleUrl: './blue-yeti.component.css'
 })
-export class BlueYetiComponent {
-  private pairing_time = 60;
-  private drawing_time = 20;
-  private isTimerResetting = false;
-  timer : number = this.drawing_time;
+export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
+  timer : number = 10;
   DECK_SIZE: number = 29;
   CARD_WIDTH: number = 210;
   CARD_HEIGHT: number = 140;
@@ -98,25 +95,19 @@ export class BlueYetiComponent {
     //load resources then initialize game
     this.yetiImage.addEventListener("load", () => {
       this.initializeGame();
-      const interval = setInterval(() => {
-        if(this.isTimerResetting){
-          this.setTimer();
-        }
-        if (--this.timer <= 0) {
-          this.setTimer();
-          //clearInterval(interval);
-        }
-    }, 1000);
     });
     this.yetiImage.src = '../../assets/yeti.png';
   }
 
-  setTimer(){
-    if(this.turnPhase == 'draw'){
-      this.timer = this.drawing_time;
-    } else {
-      this.timer = this.pairing_time;
+  ngOnDestroy(): void {
+    if (this.handSubscription) {
+      this.handSubscription.unsubscribe();
     }
+  }
+
+  ngAfterViewInit() {
+    this.drawAllFormulas();
+    this.drawPairs();
   }
 
   initializeGame(){
@@ -150,6 +141,8 @@ export class BlueYetiComponent {
         this.handlePlayerOut(received.data);
       }else if(received.type == ServerSocketMessage.EndGame){
         this.handleGameOver(received.data);
+      } else if(received.type == ServerSocketMessage.TimerState){
+        this.timer = received.data;
       }
     });
   }
@@ -332,17 +325,6 @@ export class BlueYetiComponent {
     this.refreshHand(concatHand);
   }
 
-  ngOnDestroy(): void {
-    if (this.handSubscription) {
-      this.handSubscription.unsubscribe();
-    }
-  }
-
-  ngAfterViewInit() {
-    this.drawAllFormulas();
-    this.drawPairs();
-  }
-
 
   onDrop(event: CdkDragDrop<SimpleCard[]>) {
     var commonCardSlotIds = ["div-less-spot", "div-greater-spot", "conv-less-spot", "conv-greater-spot"];
@@ -454,8 +436,8 @@ export class BlueYetiComponent {
       var equationImage = new Image();
       equationImage.addEventListener("load", () => {
         const ctx = canvas.getContext("2d")!;
-        let latexWidth = equationImage.naturalWidth*4;
-        let latexHeight = equationImage.naturalHeight*4;
+        let latexWidth = equationImage.naturalWidth*3.4;
+        let latexHeight = equationImage.naturalHeight*3.4;
         let currentY = canvas.height / 2 - latexHeight / 2;
         let currentX = canvas.width / 2 - latexWidth / 2;
         ctx.fillStyle = 'white';

@@ -1,31 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Guesser game</title>
-    </head>
-    <body>
-        <div id="main-container">
-            <div id="guesser-container">
-                <div id="canvas-container">
-                    <canvas id="guesser-canvas"></canvas>
-                </div>
-                <div id="quiz-controls">
-                    <div id="feedback">
-                    </div>
-                    <div id="guess-buttons">
-                        <button id="div-button" class="disabled" (click)="guessConvergence(false)">Divergent</button>
-                        <button id="conv-button" class="disabled"  (click)="guessConvergence(true)">Convergent</button>
-                    </div>
-                    <div id="card-grid">
-                        <!--previews-->
-                    </div>
-                </div>
-            </div>
-            <div class="centred-container"><button id="next-button" (click)="nextExercise()">Next</button></div>
-            <div id="score">0</div>
+<div id="background">
+  <div id="main-container">
+    <h3>Practice</h3>
+    <div id="guesser-container" [style.visibility]="isGameOver ? 'hidden': 'visible'">
+      <div id="canvas-container">
+        <canvas id="guesser-canvas" [style.height]="CARD_WIDTH + 'px'" [style.width]="CARD_WIDTH * 1.5 + 'px'"
+        [height]="CARD_WIDTH*3" [width]="CARD_WIDTH*3*1.5" #guesserCanvas></canvas>
+      </div>
+      <div id="quiz-controls">
+        <div id="feedback" style='color:white;' *ngIf="isResultShown" [style.backgroundColor]="isCorrect ? 'green' : 'red'">
+          <div *ngIf="isCorrect">Your answer is correct.</div>
+          <div *ngIf="!isCorrect">
+            <div style='margin-bottom:1rem'>Your answer is incorrect.</div>
+            <app-explanations [type] = "sumType"></app-explanations>
+          </div>
         </div>
-
-    </body>
-</html>
+        <div id="guess-buttons" *ngIf="!isResultShown">
+          <a id="div-button" class="button" [class.disabled]="cards.length == 0" (click)="guessConvergence(false)">Divergent</a>
+          <a id="conv-button" class="button" [class.disabled]="cards.length == 0" (click)="guessConvergence(true)">Convergent</a>
+        </div>
+        <div id="card-grid" [style.height]="PREVIEW_WIDTH/1.5+'px'"  [style.maxWidth]="2*this.PREVIEW_WIDTH+25+'px'">
+          <canvas *ngFor="let n of repeatArray()" [style.width]="PREVIEW_WIDTH + 'px'" [style.height]="PREVIEW_WIDTH/1.5 + 'px'"
+          [height]="CARD_WIDTH*3" [width]="CARD_WIDTH*3*1.5" #previewCanvas></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="centred-container" [style.visibility]="isGameOver ? 'hidden': 'visible'">
+      <a id="next-button" class="button" (click)="nextExercise()" *ngIf="isResultShown">Next</a>
+      <div>{{current_index + 1}}/{{EXERCISE_NUMBER}}</div>
+    </div>
+    <div class="results" *ngIf="isGameOver">
+      <div class="summary">
+        <div>No. of exercises: <span>{{ EXERCISE_NUMBER }}</span></div>
+        <div>Correct: <span>{{ score }}</span></div>
+        <div>Incorrect: <span>{{ EXERCISE_NUMBER-score }}</span></div>
+        <div>Score: <span>{{ score }}</span></div>
+        <div>Time: <span>{{ 120-timer }}s</span></div>
+      </div>
+      <a id="menu-button" class="button" (click)="backToMenu()">Menu</a>
+    </div>
+    <div class="answers">
+      @for(answer of answers; track $index){
+        <div class="answer" [class.correct-answer]="answer" [style.width]="200/EXERCISE_NUMBER - 5 + 'px'" [style.height]="200/EXERCISE_NUMBER -5 + 'px'"> </div>
+      }
+    </div>
+    <div id="timer">{{ timer }}</div>
+    <div id="score">{{ score }}</div>
+  </div>
+</div>

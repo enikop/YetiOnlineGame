@@ -10,8 +10,19 @@ RegisterHTMLHandler(adaptor)
 
 const mathjax_document = mathjax.document('', {
   InputJax: new TeX({ packages: AllPackages }),
-  OutputJax: new SVG({ fontCache: 'local' })
+  OutputJax:  new SVG({ fontCache: 'local' })
 })
+
+const mathjax_options = {
+  em: 16,
+  ex: 8,
+  containerWidth: 1280,
+}
+
+export function get_mathjax_svg(math: string): string {
+  const node = mathjax_document.convert(math, mathjax_options)
+  return adaptor.innerHTML(node);
+}
 
 export function renderLatex(latexText: string){
     const node = mathjax_document.convert(latexText)

@@ -65,6 +65,9 @@ export class BlueYetiService {
     });
     this.socket.on(ServerSocketMessage.EndGame, (resultData)=>{
       this.blueyetiSubject.next({type: ServerSocketMessage.EndGame, data: resultData});
+    });
+    this.socket.on(ServerSocketMessage.TimerState, (timerValue)=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.TimerState, data: timerValue});
     })
   }
 

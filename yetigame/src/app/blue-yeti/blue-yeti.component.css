@@ -35,6 +35,7 @@ body, html{
     justify-content: space-between;
     align-items: center;
     background-color: var(--dark-blue);
+    background: radial-gradient(var(--light-blue), var(--dark-blue));
 }
 
 .player-top, .player-bottom {
@@ -178,7 +179,8 @@ body, html{
     margin: 0.2rem;
     width: fit-content;
     height: fit-content;
-    background-color: var(--light-blue);
+    margin-top: 2.75rem;
+    /*background-color: var(--light-blue);*/
 }
 
 #pairing-space, #div-space, #conv-space{
@@ -189,6 +191,7 @@ body, html{
 }
 
 #div-space, #conv-space{
+    position: relative;
     width: fit-content;
     padding: 0.4rem;
     margin: 0.2rem;
@@ -216,6 +219,7 @@ body, html{
     align-items:flex-start;
     transform: translateX(calc(-100% + 3rem));
     transition: transform 0.2s;
+    z-index: 2;
 }
 #sidebar-history{
     width: fit-content;
@@ -331,4 +335,22 @@ body, html{
     cursor: pointer;
     background-color: var(--light-blue);
     color: var(--dark-blue);
+}
+
+.dark-username{
+  color: var(--dark-blue);
+}
+
+
+.space-name {
+  position: absolute;
+  top: -2.75rem;
+  left: 0;
+  color: #f0f0f0;
+  font-weight: normal;
+  font-size: 2.75rem;
+  text-align: right;
+  font-family: "Sacramento", cursive;
+  text-shadow: 5px 5px 5px var(--dark-blue);
+  z-index: 1;
 }

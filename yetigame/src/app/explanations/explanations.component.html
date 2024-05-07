@@ -1,0 +1,24 @@
+<div class="small-text" *ngIf="type == 'harmonic'">
+  <span class="explanation">The harmonic series </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty}\\frac{1}{n}'))"></span>
+  <span class="explanation"> diverges.</span>
+</div>
+<div class="small-text"*ngIf="type == 'geometric'">
+  <span class="explanation">The geometric series </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=0}^{\\infty}aq^k\\ \\ \\left(q\\in\\mathbb{R}, a\\in\\mathbb{R}^+\\right)'))"></span>
+  <span class="explanation"> converges, if </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\left|{q}\\right| < 1'))"></span>
+  <span class="explanation">, otherwise it diverges. </span>
+</div>
+<div class="small-text" *ngIf="type == 'constant'">
+  <span class="explanation">The constant series </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty}k\\ \\ \\left(k\\in\\mathbb{R}\\right)'))"></span>
+  <span class="explanation"> always diverges.</span>
+</div>
+<div class="small-text" *ngIf="type == 'hyperharmonic'">
+  <span class="explanation">The hyperharmonic series </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty}\\frac{1}{n^{\\alpha}}\\ \\ \\left(\\alpha\\in\\mathbb{R}\\right)'))"></span>
+  <span class="explanation"> converges, if </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\alpha > 1'))"></span>
+  <span class="explanation">, otherwise it diverges. </span>
+</div>

@@ -1,0 +1,21 @@
+Help menük:
+Nagy help ablak a játékszabályokkal, az összes releváns szabállyal
+Kérdőjel ikon, amire rámenve látható a direct comparison test definíció
+
+Assisted game mode:
+Kártyára kattintva jelenjen meg a specifikus szabály
+Írja ki oldalt pl, vagy a név mellett, hogy hány lehetséges pár van a kártyái között
+
+Practice:
+Piros keret eltüntetése				KÉSZ
+Pontszámláló szebben				KÉSZ
+Írja ki, hanyadik kérdés hányból		KÉSZ
+Rossz válasznál írja ki a vonatkozó szabályt	KÉSZ
+Időmérés					KÉSZ
+Összefoglaló a játék végén			KÉSZ
+Haladási sáv jó/rossz válaszok			KÉSZ
+
+Integrál pakli felvitele			KÉSZ
+Körök implementálása				KÉSZ
+Robot játékos párosítson is néha
+

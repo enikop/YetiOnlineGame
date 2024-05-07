@@ -11,7 +11,8 @@ export enum ServerSocketMessage {
   PickUp = 'pickUp',
   PairFeedback = 'pairFeedback',
   PlayerOut = 'playerOut',
-  EndGame = 'endGame'
+  EndGame = 'endGame',
+  TimerState = 'timerState'
 }
 
 export enum ClientSocketMessage {
@@ -28,6 +29,7 @@ export interface SocketUser {
   playerId: string;
   userName: string;
   inGame: boolean;
+  leftGame: boolean;
   currentHand: CardExtended[];
 }
 export interface Game {
@@ -37,6 +39,11 @@ export interface Game {
   players: SocketUser[];
   gameState: GameState;
   result: string[];
+  timer: number;
+  resetDrawingTimer: boolean;
+  resetPairingTimer: boolean;
+  isDrawingTimerRunning: boolean;
+  isPairingTimerRunning: boolean;
 }
 export interface CardExtended {
   id: number;

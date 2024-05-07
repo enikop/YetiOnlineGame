@@ -13,6 +13,8 @@ export class SocketHandler {
   private MAX_PLAYER_NUMBER = 4;
   private DECK_SIZE: number = 28;
   private games: Game[] = [];
+  private DRAW_TIME = 10;
+  private PAIR_TIME = 50;
 
   constructor(httpServer: HttpServer<typeof IncomingMessage, typeof ServerResponse> | Partial<ServerOptions>) {
     this.io = new Server(httpServer);
@@ -23,133 +25,194 @@ export class SocketHandler {
     this.io.on("connection", (socket) => {
       const deckId = socket.handshake.query.deckId as string;
       const userId = socket.handshake.query.userId as string;
-      const socketUser: SocketUser = { playerId: userId, socketId: socket.id, userName: "Player" + userId, inGame: true, currentHand: [] };
+      const socketUser: SocketUser = {
+        playerId: userId,
+        socketId: socket.id,
+        userName: "Player" + userId,
+        inGame: true,
+        leftGame: false,
+        currentHand: []
+      };
       const gameId = this.handleJoin(deckId, socketUser);
       socket.join('room' + gameId);
       const game = this.games.filter(game => game.id == gameId)[0];
       if (game.full) {
         this.io.to('room' + gameId).emit(ServerSocketMessage.StartGame, gameId);
         this.sendOutCards(game);
+        this.setDrawingTimer(game, game.players[0], game.players[1]);
       }
 
       socket.on(ClientSocketMessage.ChooseCard, (drawData) => {
-        const game = this.games.filter(game => game.players.filter((player => player.socketId == socket.id)).length > 0)[0];
+        const game = this.getGameBySocketId(socket.id);
+        game.resetDrawingTimer = true;
         const playerIndex = game.players.findIndex(player => player.socketId == socket.id);
-
         var nextPlayer = this.getNextPlayer(playerIndex, game);
-
-        this.io.to(nextPlayer.socketId).emit(ServerSocketMessage.PreviewCardDraw, drawData);
+        if(nextPlayer.leftGame){
+          var index = 0;
+          var card = nextPlayer.currentHand[index];
+          this.transferCard(nextPlayer.socketId, {id: card.id, latex: card.latex})
+        } else {
+          this.io.to(nextPlayer.socketId).emit(ServerSocketMessage.PreviewCardDraw, drawData);
+        }
       })
 
       socket.on(ClientSocketMessage.SendCard, (card) => {
-        const game = this.games.filter(game => game.players.filter((player => player.socketId == socket.id)).length > 0)[0];
-        const playerIndex = game.players.findIndex(player => player.socketId == socket.id);
-        const giver = game.players[playerIndex];
-        const receiver = this.getPrecedentPlayer(playerIndex, game);
-        const cardIndex = giver.currentHand.findIndex(playerCard => playerCard.id == card.id);
-        const cardPassed = giver.currentHand[cardIndex];
-        receiver.currentHand.push(cardPassed);
-        this.io.to(receiver.socketId).emit(ServerSocketMessage.SendCard, { id: cardPassed.id, latex: cardPassed.latex });
-        giver.currentHand.splice(cardIndex, 1);
-        this.io.to(giver.socketId).emit(ServerSocketMessage.DrawCard);
-        if (giver.currentHand.length == 0) {
-          giver.inGame = false;
-          game.result.push(giver.playerId);
-          this.io.to('room' + game.id).emit(ServerSocketMessage.PlayerOut, giver.playerId);
-          const inGamePlayers = game.players.filter(p => p.inGame);
-          if (inGamePlayers.length == 1) {
-            this.io.to('room' + game.id).emit(ServerSocketMessage.EndGame, { 'result': game.result, 'loser': inGamePlayers[0].playerId, 'complete': true })
-          }
-        }
-
-        this.io.to('room' + game.id).emit(ServerSocketMessage.StartPairing);
+        this.transferCard(socket.id, card);
       })
 
       socket.on(ClientSocketMessage.EndTurn, () => {
-        const game = this.games.filter(game => game.players.filter((player => player.socketId == socket.id)).length > 0)[0];
-        const playerIndex = game.players.findIndex(player => player.socketId == socket.id);
-        var nextDrawer = this.getNextPlayer(playerIndex, game);
-        const nextIndex = game.players.findIndex(player => player.socketId == nextDrawer.socketId);
-        var nextGiver = this.getNextPlayer(nextIndex, game);
-        this.io.to('room' + game.id).emit(ServerSocketMessage.StartTurn, { drawer: nextDrawer.playerId, drawFrom: nextGiver.playerId });
-        game.gameState = {
-          convLess: undefined,
-          convGreater: undefined,
-          divLess: undefined,
-          divGreater: undefined
-        }
+        this.endTurn(socket.id);
       })
       //TODO: nextPlayer emit this.io.to('room'+game.id).emit('nextPlayer', {drawer: giver.playerId, drawFrom:nextGiver.playerId});
 
       socket.on(ClientSocketMessage.PutDown, (putDownData) => {
-        const game = this.games.filter(game => game.players.filter((player => player.socketId == socket.id)).length > 0)[0];
+        const game = this.getGameBySocketId(socket.id);
         const player = game.players.filter((player => player.socketId == socket.id))[0];
         const currentCard = player.currentHand.filter(c => c.id.toString() == putDownData.card.id)[0];
         this.placeCardInSpot(game, putDownData.cardPlacement, currentCard);
         this.io.to('room' + game.id).emit(ServerSocketMessage.PutDown, putDownData);
-        const checkResult = this.checkPairs(game);
-        if (checkResult.valid) {
-          const lessIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.less.id)[0]);
-          player.currentHand.splice(lessIndex, 1);
-          const greaterIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.greater.id)[0]);
-          player.currentHand.splice(greaterIndex, 1);
-        }
-        if (player.currentHand.length == 0) {
-          player.inGame = false;
-          game.result.push(player.playerId);
-          this.io.to('room' + game.id).emit(ServerSocketMessage.PlayerOut, player.playerId);
-          const inGamePlayers = game.players.filter(p => p.inGame);
-          if (inGamePlayers.length == 1) {
-            this.io.to('room' + game.id).emit(ServerSocketMessage.EndGame, { 'result': game.result, 'loser': inGamePlayers[0].playerId, 'complete': true })
-          }
-        }
+        this.handlePairs(game, player);
+        this.checkForWin(player, game);
       })
 
       socket.on(ClientSocketMessage.PutDownMove, (moveData) => {
-        const game = this.games.filter(game => game.players.filter((player => player.socketId == socket.id)).length > 0)[0];
+        const game = this.getGameBySocketId(socket.id);
         const player = game.players.filter((player => player.socketId == socket.id))[0];
         const currentCard = player.currentHand.filter(c => c.id.toString() == moveData.card.id)[0];
         this.placeCardInSpot(game, moveData.newPlacement, currentCard);
-        this.deleteCardFromSpot(game, moveData.prevthis.iousPlacement);
+        this.deleteCardFromSpot(game, moveData.previousPlacement);
         this.io.to('room' + game.id).emit(ServerSocketMessage.PutDownMove, moveData);
-        const checkResult = this.checkPairs(game);
-        if (checkResult.valid) {
-          const lessIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.less.id)[0]);
-          const greaterIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.greater.id)[0]);
-          player.currentHand.splice(lessIndex, 1);
-          player.currentHand.splice(greaterIndex, 1);
-        }
-        if (player.currentHand.length == 0) {
-          player.inGame = false;
-          game.result.push(player.playerId);
-          this.io.to('room' + game.id).emit(ServerSocketMessage.PlayerOut, player.playerId);
-          const inGamePlayers = game.players.filter(p => p.inGame);
-          if (inGamePlayers.length == 1) {
-            this.io.to('room' + game.id).emit(ServerSocketMessage.EndGame, { 'result': game.result, 'loser': inGamePlayers[0].playerId, 'complete': true })
-          }
-        }
+        this.handlePairs(game, player);
+        this.checkForWin(player, game);
       })
 
       socket.on(ClientSocketMessage.PickUp, (putBackData) => {
-        const game = this.games.filter(game => game.players.filter((player => player.socketId == socket.id)).length > 0)[0];
+        const game = this.getGameBySocketId(socket.id);
         this.deleteCardFromSpot(game, putBackData.cardPlacement);
         this.io.to('room' + game.id).emit(ServerSocketMessage.PickUp, putBackData);
       })
 
       socket.on('disconnect', () => {
         console.log('A client disconnected:', socket.id);
-        const game = this.games.filter(game => game.players.filter((player => player.socketId == socket.id)).length > 0)[0];
+        const game = this.getGameBySocketId(socket.id);
         //if the game hasn't started yet, simply disconnect the player
         if (game && !game.full) {
           var index = this.games.indexOf(game);
           game.players.splice(index, 1);
         } else if(game) {
+          const player = game.players.filter((player => player.socketId == socket.id))[0];
+          player.leftGame = true;
+          //TODO let server do pairing as a robot player (now robot player only pulls and gives cards)
           this.io.to('room'+game.id).emit(ServerSocketMessage.EndGame, { 'result': game.result, 'complete': false })
         }
-        //if the game is already in progress
-        //TODO: robot player?
       });
     });
+  }
+
+  private transferCard(giverSocketId: string, card: any) {
+    const game = this.getGameBySocketId(giverSocketId);
+    const playerIndex = game.players.findIndex(player => player.socketId == giverSocketId);
+    const giver = game.players[playerIndex];
+    const receiver = this.getPrecedentPlayer(playerIndex, game);
+    const cardIndex = giver.currentHand.findIndex(playerCard => playerCard.id == card.id);
+    const cardPassed = giver.currentHand[cardIndex];
+    receiver.currentHand.push(cardPassed);
+    this.io.to(receiver.socketId).emit(ServerSocketMessage.SendCard, { id: cardPassed.id, latex: cardPassed.latex });
+    giver.currentHand.splice(cardIndex, 1);
+    this.io.to(giver.socketId).emit(ServerSocketMessage.DrawCard);
+    this.checkForWin(giver, game);
+
+    this.io.to('room' + game.id).emit(ServerSocketMessage.StartPairing);
+    this.setPairingTimer(game, receiver);
+  }
+
+  private handlePairs(game: Game, player: SocketUser) {
+    const checkResult = this.checkPairs(game);
+    if (checkResult.valid) {
+      const lessIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.less.id)[0]);
+      player.currentHand.splice(lessIndex, 1);
+      const greaterIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.greater.id)[0]);
+      player.currentHand.splice(greaterIndex, 1);
+    }
+  }
+
+  private checkForWin(playerToCheck: SocketUser, game: Game) {
+    if (playerToCheck.currentHand.length == 0) {
+      playerToCheck.inGame = false;
+      game.result.push(playerToCheck.playerId);
+      this.io.to('room' + game.id).emit(ServerSocketMessage.PlayerOut, playerToCheck.playerId);
+      const inGamePlayers = game.players.filter(player => player.inGame);
+      if (inGamePlayers.length == 1) {
+        game.resetDrawingTimer = true;
+        game.resetPairingTimer = true;
+        game.isPairingTimerRunning = true;
+        game.isDrawingTimerRunning = true;
+        this.io.to('room' + game.id).emit(ServerSocketMessage.EndGame, { 'result': game.result, 'loser': inGamePlayers[0].playerId, 'complete': true });
+      }
+    }
+  }
+
+  private getGameBySocketId(socketId: string){
+    return this.games.filter(game => game.players.filter((player => player.socketId == socketId)).length > 0)[0];
+  }
+
+  private endTurn(socketId: string) {
+    const game = this.games.filter(game => game.players.filter((player => player.socketId == socketId)).length > 0)[0];
+    game.resetPairingTimer = true;
+    const playerIndex = game.players.findIndex(player => player.socketId == socketId);
+    var nextDrawer = this.getNextPlayer(playerIndex, game);
+    const nextIndex = game.players.findIndex(player => player.socketId == nextDrawer.socketId);
+    var nextGiver = this.getNextPlayer(nextIndex, game);
+    this.io.to('room' + game.id).emit(ServerSocketMessage.StartTurn, { drawer: nextDrawer.playerId, drawFrom: nextGiver.playerId });
+    this.setDrawingTimer(game, nextDrawer, nextGiver);
+
+    game.gameState = {
+      convLess: undefined,
+      convGreater: undefined,
+      divLess: undefined,
+      divGreater: undefined
+    };
+  }
+
+  setPairingTimer(game: Game, player: SocketUser){
+    if(!game.isPairingTimerRunning){
+      game.isPairingTimerRunning = true;
+      game.timer = player.leftGame ? 1 : this.PAIR_TIME;
+      var interval = setInterval(() => {
+        this.io.to('room'+ game.id).emit(ServerSocketMessage.TimerState, game.timer);
+        if (game.resetPairingTimer) {
+          game.resetPairingTimer = false;
+          game.isPairingTimerRunning = false;
+          clearInterval(interval);
+        } else if (--game.timer < 0) {
+          this.endTurn(player.socketId);
+          game.isPairingTimerRunning = false;
+          clearInterval(interval);
+        }
+      }, 1000);
+    }
+  }
+
+  setDrawingTimer(game: Game, currentPlayer: SocketUser, nextPlayer:SocketUser){
+    if(!game.isDrawingTimerRunning){
+      game.isDrawingTimerRunning = true;
+      game.timer = currentPlayer.leftGame ? 1 : this.DRAW_TIME;
+      var interval = setInterval(() => {
+        this.io.to('room'+ game.id).emit(ServerSocketMessage.TimerState, game.timer);
+        if (game.resetDrawingTimer) {
+          game.resetDrawingTimer = false;
+          game.resetPairingTimer = false;
+          game.isDrawingTimerRunning = false;
+          clearInterval(interval);
+        } else if (--game.timer < 0) {
+          const index = 0;
+          this.io.to(nextPlayer.socketId).emit(ServerSocketMessage.PreviewCardDraw, {userId: currentPlayer, cardIndex: index});
+          game.resetPairingTimer = false;
+          game.isDrawingTimerRunning = false;
+          clearInterval(interval);
+        }
+      }, 1000);
+    }
   }
 
   checkPairs(game: Game) {
@@ -264,6 +327,11 @@ export class SocketHandler {
         divGreater: undefined
       },
       result: [],
+      timer: this.DRAW_TIME,
+      resetDrawingTimer: false,
+      resetPairingTimer: false,
+      isDrawingTimerRunning: false,
+      isPairingTimerRunning: false
     }
     this.games.push(newGame);
     return newId;
@@ -334,6 +402,21 @@ export class SocketHandler {
       subtype: 'yeti',
       convergent: false
     }];
+    const allCards = groups.flatMap(group => group.cards);
+    if(this.DECK_SIZE == allCards.length){
+      groups.forEach((group)=>{
+        group.cards.forEach((card)=>{
+          currentDeck.push({
+            ...card,
+            groupId: group.id,
+            convergent: group.convergent,
+            subtype: group.subtype
+          });
+        })
+      });
+
+      return this.shuffle(currentDeck);
+    }
     while (currentDeck.length < this.DECK_SIZE) {
       if (index >= groups.length) index = 0;
       var group = groups[index];
