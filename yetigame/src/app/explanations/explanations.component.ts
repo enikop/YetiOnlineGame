@@ -13,11 +13,12 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 export class ExplanationsComponent {
   @Input()
   type: string = '';
+  @Input()
+  integral:boolean = false;
 
   sanitizer = inject(DomSanitizer);
 
   getLatex(formula: string) {
-    console.log(get_mathjax_svg( formula ));
     return get_mathjax_svg( formula );
   }
 

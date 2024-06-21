@@ -2,6 +2,9 @@
     <div class="timer" [class.timer-low]="timer < 5">
       {{timer}}
     </div>
+    <div class="help-modal-opener" (click)="openHelp()">
+      ?
+    </div>
     <div class="player-top">
         <div class="player-toolstrip">
             <div class="player-username" [class.highlighted-player]="turnId==players[2].playerId">{{players[2].userName}}</div>
@@ -60,6 +63,9 @@
                 {{players[0].userName}}
             </div>
             <span *ngIf="turnId==myId" class="material-icons">pending</span>
+            <span *ngIf="isAssistedModeOn" class="pair-count-display">
+              <span>Pair count: {{totalPairNumber}}</span>
+            </span>
             <button  *ngIf="turnPhase == 'pair' && turnId == myId" (click) = "endTurn()">End turn</button>
         </div>
         <div class="player-hand player-current">
@@ -69,6 +75,9 @@
                     (cdkDropListDropped)="onDrop($event)">
                     @for (item of firstRow; track item) {
                     <div class="card" id="card-{{item.id}}" cdkDrag>
+                        <div class="tooltip" *ngIf="isAssistedModeOn">
+                          <app-explanations [type]="item.subtype" [integral]="!isSeries"></app-explanations>
+                        </div>
                         <div class="card-placeholder" *cdkDragPlaceholder></div>
                         <canvas #cardCanvas id="canvas-{{item.id}}"></canvas>
                     </div>
@@ -82,6 +91,9 @@
                     (cdkDropListDropped)="onDrop($event)">
                     @for (item of secondRow; track item) {
                     <div class="card" id="card-{{item.id}}" cdkDrag>
+                        <div class="tooltip" *ngIf="isAssistedModeOn">
+                          <app-explanations [type]="item.subtype" [integral]="!isSeries"></app-explanations>
+                        </div>
                         <div class="card-placeholder" *cdkDragPlaceholder></div>
                         <canvas #cardCanvas id="canvas-{{item.id}}"></canvas>
                     </div>
@@ -136,4 +148,6 @@
         <div id="sidebar-button" (click)="toggleSidebar()"><span class="material-icons">history</span></div>
     </div>
 
+
+    <app-comparison-test-modal [isVisible]="isHelpModalOn" [isSeries]="isSeries" (closingModal)="closeHelp()"></app-comparison-test-modal>
 </div>

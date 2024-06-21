@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { Socket, io } from 'socket.io-client';
-import { SimpleCard } from '../blue-yeti/blue-yeti.component';
+import { SimpleCard } from '../../../models';
 import { ClientSocketMessage, ServerSocketMessage } from '../../../models';
 
 export type SpotType = 'div-less-spot' | 'div-greater-spot' | 'conv-less-spot' | 'conv-greater-spot';
@@ -68,7 +68,14 @@ export class BlueYetiService {
     });
     this.socket.on(ServerSocketMessage.TimerState, (timerValue)=>{
       this.blueyetiSubject.next({type: ServerSocketMessage.TimerState, data: timerValue});
+    });
+    this.socket.on(ServerSocketMessage.PairNumberAnswer, (pairNum) =>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.PairNumberAnswer, data: pairNum});
     })
+  }
+
+  inquirePairNumber(){
+    this.socket.emit(ClientSocketMessage.PairNumberInquiry);
   }
 
   giveCard(card: SimpleCard){

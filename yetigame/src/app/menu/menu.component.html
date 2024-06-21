@@ -1,20 +1,67 @@
-<div id="menu">
-    <button  class="menu-button" (click)="startPractise()">Practise</button>
-    <div id="deck-choice-practise" class="choice choice-disabled"></div>
-    <button  class="menu-button" (click)="startPlay()">Play</button>
-    <div id="game-choice" class="choice choice-disabled">
-        <div id="yeti" class="deck-card game-card selected-game" (click)="selectGame('yeti')">
-            <h3>YETI</h3>
+<div class="container">
+  <div class="content">
+    <div id="header">
+      <div class="title">
+        Blue Yeti
+      </div>
+      <div class="subtitle">
+        <div>
+          Multiplayer didactic
         </div>
-        <div id="blue-yeti" class="deck-card game-card" (click)="selectGame('blue-yeti')">
-            <h3>Blue Yeti</h3>
+        <div>
+          game for improper integrals and infinite sums
         </div>
-        <div id="wall-builder" class="deck-card game-card" (click)="selectGame('wall-builder')">
-            <h3>Wall Builder</h3>
-        </div>
+      </div>
     </div>
-    <div id="deck-choice-play" class="choice choice-disabled"></div>
-    <button  class="menu-button">Stats</button>
-    <button  class="menu-button">Log out</button>
+    <div id="menu">
+      <button class="menu-button" (click)="startPractise()"
+        [class.active-menu-button]="isPractiseOpen">Practice</button>
+      <div id="deck-choice-practise" class="choice" *ngIf="isPractiseOpen">
+        @for(deck of decks; track $index){
+        <div class="deck-card" (click)="this.navigateAway(deck.id)">
+          <h3>Deck {{deck.id}}</h3>
+          <div>
+            <span>Type: </span> {{deck.type}}
+          </div>
+          <div>
+            <span>Level: </span> {{deck.level}}
+          </div>
+        </div>
+        }
+      </div>
+      <button class="menu-button" (click)="startAssistedPlay()" [class.active-menu-button]="isAssistedPlayOpen">Assisted
+        Play</button>
+      <div id="deck-choice-assisted-play" class="choice" *ngIf="isAssistedPlayOpen">
+        @for(deck of decks; track $index){
+        <div class="deck-card" (click)="this.navigateAway(deck.id)">
+          <h3>Deck {{deck.id}}</h3>
+          <div>
+            <span>Type: </span> {{deck.type}}
+          </div>
+          <div>
+            <span>Level: </span> {{deck.level}}
+          </div>
+        </div>
+        }
+      </div>
+      <button class="menu-button" (click)="startPlay()" [class.active-menu-button]="isPlayOpen">Play</button>
+      <div id="deck-choice-play" class="choice" *ngIf="isPlayOpen">
+        @for(deck of decks; track $index){
+        <div class="deck-card" (click)="this.navigateAway(deck.id)">
+          <h3>Deck {{deck.id}}</h3>
+          <div>
+            <span>Type: </span> {{deck.type}}
+          </div>
+          <div>
+            <span>Level: </span> {{deck.level}}
+          </div>
+        </div>
+        }
+      </div>
+      <button class="menu-button" (click)="navigateTo('instructions')">Instructions</button>
+    </div>
+  </div>
+  <div class="image">
+    <img src="./assets/yetibook.png" alt="Yeti with a maths textbook.">
+  </div>
 </div>
-

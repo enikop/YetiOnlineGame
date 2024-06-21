@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, QueryList, ViewChildren, inject } from '@angular/core';
 import { BlueYetiService, SpotType } from '../services/blue-yeti.service';
 import { ActivatedRoute } from '@angular/router';
 import { CardDTO} from '../models/dto';
@@ -6,12 +6,10 @@ import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from 
 import { CommonModule } from '@angular/common';
 import { renderLatex } from '../latexhandler';
 import { Subscription } from 'rxjs';
-import { ServerSocketMessage } from '../../../models';
-
-export interface SimpleCard{
-  id: string,
-  latex: string
-}
+import { ServerSocketMessage, SimpleCard } from '../../../models';
+import { ComparisonTestModalComponent } from '../comparison-test-modal/comparison-test-modal.component';
+import { DeckService } from '../services/deck.service';
+import { ExplanationsComponent } from '../explanations/explanations.component';
 
 type TurnPhase = 'draw' | 'pair';
 
@@ -30,7 +28,7 @@ interface Pair{
 @Component({
   selector: 'app-blue-yeti',
   standalone: true,
-  imports: [DragDropModule, CommonModule],
+  imports: [DragDropModule, CommonModule, ComparisonTestModalComponent, ExplanationsComponent],
   templateUrl: './blue-yeti.component.html',
   styleUrl: './blue-yeti.component.css'
 })
@@ -63,16 +61,16 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
   isSidebarActive: boolean = false;
 
   firstRow: SimpleCard[] = [
-    { id: '1', latex: '\\frac{a}{b}' },
-    { id: '2', latex: '\\sqrt{x}' },
-    { id: '3', latex: 'e^{i\\pi} + 1 = 0' },
-    { id: '4', latex: '\\int_{a}^{b} f(x) \\,dx' }
+    { id: '1', latex: '\\frac{a}{b}', subtype: 'geometric' },
+    { id: '2', latex: '\\sqrt{x}' , subtype: 'harmonic'},
+    { id: '3', latex: 'e^{i\\pi} + 1 = 0', subtype: 'hyperharmonic' },
+    { id: '4', latex: '\\int_{a}^{b} f(x) \\,dx', subtype: 'constant' }
   ];
   secondRow: SimpleCard[] =  [
-    { id: '5', latex: '\\frac{4}{5}' },
-    { id: '6', latex: '\\sqrt{9}' },
-    { id: '7', latex: 'e^{234\\pi} + 1 = 0' },
-    { id: '8', latex: '\\int_{6}^{7} f(x) \\,dx' }
+    { id: '5', latex: '\\frac{4}{5}', subtype: 'hyperharmonic' },
+    { id: '6', latex: '\\sqrt{9}', subtype: 'hyperharmonic'  },
+    { id: '7', latex: 'e^{234\\pi} + 1 = 0', subtype: 'hyperharmonic'  },
+    { id: '8', latex: '\\int_{6}^{7} f(x) \\,dx', subtype: 'hyperharmonic'  }
   ];
   turnId:string ="";
   pullFromId:string ="";
@@ -82,13 +80,13 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
   yetiImage!: HTMLImageElement;
   result: string[] = [];
   newCardId:string = '';
-
-  constructor(
-    private currentRoute: ActivatedRoute,
-    private cdr: ChangeDetectorRef
-  ) { }
-
-
+  isSeries: boolean = true;
+  isHelpModalOn = false;
+  totalPairNumber = 0;
+  isAssistedModeOn = true;
+  deckService = inject(DeckService);
+  currentRoute = inject(ActivatedRoute);
+  cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.yetiImage = new Image();
@@ -113,6 +111,16 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
   initializeGame(){
     //start socket communication with server, initialize observer subscription
     const deckId = this.currentRoute.snapshot.params['deckId'];
+    //set assisted mode based on the path
+    this.isAssistedModeOn = this.currentRoute.snapshot.url[0].path == 'blue-yeti-assisted';
+    this.deckService.getOne(deckId).subscribe({
+      next: (deck) => {
+        this.isSeries = (deck.type != 'integrals');
+      },
+      error: (error) => {
+        console.error('Error fetching cards:', error.message);
+      }
+    })
     this.blueYetiService = new BlueYetiService();
     this.myId = Math.floor(Math.random() * 100).toString(); //temp line
     this.blueYetiService.connect(deckId, this.myId);
@@ -143,6 +151,8 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
         this.handleGameOver(received.data);
       } else if(received.type == ServerSocketMessage.TimerState){
         this.timer = received.data;
+      } else if(received.type == ServerSocketMessage.PairNumberAnswer){
+        this.totalPairNumber = received.data;
       }
     });
   }
@@ -175,6 +185,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
     //Actions for current player
     if(this.turnId == this.myId && feedbackData.valid){
       window.alert("Ügyes!");
+      if(this.isAssistedModeOn) this.blueYetiService.inquirePairNumber();
     }
     if(this.turnId == this.myId && !feedbackData.valid) window.alert(feedbackData.message);
 
@@ -276,7 +287,6 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
     var indexOfReceiver = this.players.findIndex(player => player.playerId == this.turnId);
     this.players[indexOfGiver].cardNumber--;
     this.players[indexOfReceiver].cardNumber++;
-
     this.turnPhase = 'pair';
 
   }
@@ -304,6 +314,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
     const randomIndex = Math.floor(Math.random() * (concatHand.length + 1));
     concatHand.splice(randomIndex, 0, card);
     this.refreshHand(concatHand);
+    if(this.isAssistedModeOn) this.blueYetiService.inquirePairNumber();
 
   }
   giveCard(drawData:any){
@@ -323,6 +334,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     var concatHand = [...this.firstRow, ...this.secondRow];
     this.refreshHand(concatHand);
+    if(this.isAssistedModeOn) this.blueYetiService.inquirePairNumber();
   }
 
 
@@ -379,6 +391,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
     var players: Player[] = hand.players;
     this.refreshPlayers(players);
     this.refreshHand(concatHand);
+    if(this.isAssistedModeOn) this.blueYetiService.inquirePairNumber();
   }
 
   refreshHand(concatHand: SimpleCard[]){
@@ -436,15 +449,15 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
       var equationImage = new Image();
       equationImage.addEventListener("load", () => {
         const ctx = canvas.getContext("2d")!;
-        let latexWidth = equationImage.naturalWidth*3.4;
-        let latexHeight = equationImage.naturalHeight*3.4;
+        let latexWidth = Math.min(equationImage.naturalWidth*3.4, canvas.width);
+        let latexHeight = equationImage.naturalHeight*latexWidth/equationImage.naturalWidth;
         let currentY = canvas.height / 2 - latexHeight / 2;
         let currentX = canvas.width / 2 - latexWidth / 2;
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         if(isNew){
           ctx.fillStyle = '#0B1A41';
-          ctx.fillRect(0,0,canvas.width/15, canvas.height);
+          ctx.fillRect(0, 0, canvas.width, 15);
         }
         ctx.drawImage(equationImage, currentX, currentY, Math.min(latexWidth, canvas.width), Math.min(latexHeight, canvas.height));
 
@@ -468,5 +481,13 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
 
   toggleSidebar():void{
     this.isSidebarActive = !this.isSidebarActive;
+  }
+
+  closeHelp(){
+    this.isHelpModalOn = false;
+  }
+
+  openHelp(){
+    this.isHelpModalOn = true;
   }
 }

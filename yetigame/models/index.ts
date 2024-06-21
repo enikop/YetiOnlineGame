@@ -1,3 +1,6 @@
+export const DRAW_TIME = 10;
+export const PAIR_TIME = 50;
+
 export enum ServerSocketMessage {
   StartGame = 'startGame',
   InitHand = 'initHand',
@@ -12,7 +15,8 @@ export enum ServerSocketMessage {
   PairFeedback = 'pairFeedback',
   PlayerOut = 'playerOut',
   EndGame = 'endGame',
-  TimerState = 'timerState'
+  TimerState = 'timerState',
+  PairNumberAnswer = 'pairNumberAnswer'
 }
 
 export enum ClientSocketMessage {
@@ -22,6 +26,7 @@ export enum ClientSocketMessage {
   PutDown = 'putDown',
   PutDownMove = 'putDownMove',
   PickUp = 'pickUp',
+  PairNumberInquiry = 'pairNumberInquiry'
 }
 
 export interface SocketUser {
@@ -53,11 +58,12 @@ export interface CardExtended {
   subtype: string;
   convergent: boolean;
 }
-interface SimpleCard {
+export interface SimpleCard {
   id: string;
   latex: string;
+  subtype: string;
 }
-interface GameState {
+export interface GameState {
   convLess: CardExtended;
   convGreater: CardExtended;
   divLess: CardExtended;

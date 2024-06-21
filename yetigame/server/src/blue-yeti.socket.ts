@@ -2,7 +2,7 @@ import { Response } from "express";
 import { Server, ServerOptions } from "socket.io";
 import { CardGroupController } from './controller/card-group.controller';
 import { CardGroup } from './entity/CardGroup';
-import { ClientSocketMessage, ServerSocketMessage } from '../../models';
+import { ClientSocketMessage, DRAW_TIME, PAIR_TIME, ServerSocketMessage } from '../../models';
 import { Game, SocketUser, PairingNotification, CardExtended } from '../../models';
 import { IncomingMessage, ServerResponse } from "http";
 import { Server as HttpServer } from "http";
@@ -13,8 +13,6 @@ export class SocketHandler {
   private MAX_PLAYER_NUMBER = 4;
   private DECK_SIZE: number = 28;
   private games: Game[] = [];
-  private DRAW_TIME = 10;
-  private PAIR_TIME = 50;
 
   constructor(httpServer: HttpServer<typeof IncomingMessage, typeof ServerResponse> | Partial<ServerOptions>) {
     this.io = new Server(httpServer);
@@ -50,7 +48,7 @@ export class SocketHandler {
         if(nextPlayer.leftGame){
           var index = 0;
           var card = nextPlayer.currentHand[index];
-          this.transferCard(nextPlayer.socketId, {id: card.id, latex: card.latex})
+          this.transferCard(nextPlayer.socketId, {id: card.id, latex: card.latex, subtype: card.subtype})
         } else {
           this.io.to(nextPlayer.socketId).emit(ServerSocketMessage.PreviewCardDraw, drawData);
         }
@@ -92,6 +90,13 @@ export class SocketHandler {
         this.io.to('room' + game.id).emit(ServerSocketMessage.PickUp, putBackData);
       })
 
+      socket.on(ClientSocketMessage.PairNumberInquiry, () => {
+        const game = this.getGameBySocketId(socket.id);
+        const player = game.players.filter((player => player.socketId == socket.id))[0];
+        const hand = player.currentHand;
+        this.io.to(socket.id).emit(ServerSocketMessage.PairNumberAnswer, this.countPairs(hand));
+      })
+
       socket.on('disconnect', () => {
         console.log('A client disconnected:', socket.id);
         const game = this.getGameBySocketId(socket.id);
@@ -117,7 +122,7 @@ export class SocketHandler {
     const cardIndex = giver.currentHand.findIndex(playerCard => playerCard.id == card.id);
     const cardPassed = giver.currentHand[cardIndex];
     receiver.currentHand.push(cardPassed);
-    this.io.to(receiver.socketId).emit(ServerSocketMessage.SendCard, { id: cardPassed.id, latex: cardPassed.latex });
+    this.io.to(receiver.socketId).emit(ServerSocketMessage.SendCard, { id: cardPassed.id, latex: cardPassed.latex, subtype:cardPassed.subtype });
     giver.currentHand.splice(cardIndex, 1);
     this.io.to(giver.socketId).emit(ServerSocketMessage.DrawCard);
     this.checkForWin(giver, game);
@@ -177,7 +182,7 @@ export class SocketHandler {
   setPairingTimer(game: Game, player: SocketUser){
     if(!game.isPairingTimerRunning){
       game.isPairingTimerRunning = true;
-      game.timer = player.leftGame ? 1 : this.PAIR_TIME;
+      game.timer = player.leftGame ? 1 : PAIR_TIME;
       var interval = setInterval(() => {
         this.io.to('room'+ game.id).emit(ServerSocketMessage.TimerState, game.timer);
         if (game.resetPairingTimer) {
@@ -196,7 +201,7 @@ export class SocketHandler {
   setDrawingTimer(game: Game, currentPlayer: SocketUser, nextPlayer:SocketUser){
     if(!game.isDrawingTimerRunning){
       game.isDrawingTimerRunning = true;
-      game.timer = currentPlayer.leftGame ? 1 : this.DRAW_TIME;
+      game.timer = currentPlayer.leftGame ? 1 : DRAW_TIME;
       var interval = setInterval(() => {
         this.io.to('room'+ game.id).emit(ServerSocketMessage.TimerState, game.timer);
         if (game.resetDrawingTimer) {
@@ -213,6 +218,18 @@ export class SocketHandler {
         }
       }, 1000);
     }
+  }
+
+  countPairs(hand: CardExtended[]){
+    var count = 0;
+    hand.forEach((card1) => {
+      hand.forEach((card2)=>{
+        if(this.checkIfPairable(card1, card2)){
+          count++;
+        }
+      })
+    });
+    return count/2;
   }
 
   checkPairs(game: Game) {
@@ -237,12 +254,18 @@ export class SocketHandler {
     return res;
   }
 
+  checkIfPairable(card1: CardExtended, card2: CardExtended): boolean{
+    var valid = true;
+    if (card1.groupId != card2.groupId || card1.simple == card2.simple) valid = false;
+    return valid;
+  }
+
   checkPair(less: CardExtended, greater: CardExtended, convergent: boolean): PairingNotification {
     var output: PairingNotification = {
       valid: false,
       message: "Different convergence property.",
-      less: { id: less.id.toString(), latex: less.latex },
-      greater: { id: greater.id.toString(), latex: greater.latex }
+      less: { id: less.id.toString(), latex: less.latex, subtype: less.subtype },
+      greater: { id: greater.id.toString(), latex: greater.latex, subtype: greater.subtype }
     };
     if (less.convergent != greater.convergent) output.message = "Different convergence property.";
     if (less.groupId != greater.groupId || less.simple == greater.simple) output.message = "Not a valid pair.";
@@ -251,8 +274,8 @@ export class SocketHandler {
     else output = {
       valid: true,
       convergent: greater.convergent,
-      less: { id: less.id.toString(), latex: less.latex },
-      greater: { id: greater.id.toString(), latex: greater.latex }
+      less: { id: less.id.toString(), latex: less.latex, subtype: less.subtype  },
+      greater: { id: greater.id.toString(), latex: greater.latex, subtype: greater.subtype  }
     };
     return output;
   }
@@ -327,7 +350,7 @@ export class SocketHandler {
         divGreater: undefined
       },
       result: [],
-      timer: this.DRAW_TIME,
+      timer: DRAW_TIME,
       resetDrawingTimer: false,
       resetPairingTimer: false,
       isDrawingTimerRunning: false,
@@ -378,7 +401,7 @@ export class SocketHandler {
   }
   simplifyHand(currentHand: CardExtended[]) {
     return currentHand.map(item => {
-      return { id: item.id, latex: item.latex };
+      return { id: item.id, latex: item.latex, subtype: item.subtype };
     });
 
   }

@@ -217,3 +217,24 @@ a {
 .correct-answer{
   background-color: green;
 }
+
+.help-modal-opener {
+  width: 2em;
+  height: 2em;
+  line-height: 2em;
+  text-align: center;
+  border-radius: 50%;
+  color: white;
+  background-color: var(--mid-blue);
+  font-size: 1em;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2;
+  border: 1px solid white;
+}
+
+.help-modal-opener:hover {
+  background-color: var(--light-blue);
+  cursor: pointer;
+}

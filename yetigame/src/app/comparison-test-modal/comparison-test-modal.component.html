@@ -1,0 +1,44 @@
+<div class="shader" *ngIf="isVisible"></div>
+<div class="modal" *ngIf="isVisible">
+  <div class="header">
+    <div class="header-text">
+      The direct comparison test
+    </div>
+  </div>
+  <div class="body">
+    <span >If the inequality </span>
+    <span [innerHTML]="transform(getLatex(isSeries ? '0 \\leq a_n \\leq b_n' : '0 \\leq f(x) \\leq g(x)'))"></span>
+    <span> holds for all <i>{{isSeries? 'n' : 'x'}}</i> sufficiently large, indicating that the {{isSeries? 'infinite series' : 'improper integral'}} </span>
+    <span [innerHTML]="transform(getLatex(isSeries ? '\\sum_{n=1}^{\\infty} a_n': '\\int\\limits_{a}^{\\infty} f(x) \\, dx'))"></span>
+    <span > is a minorant of the {{isSeries? 'series' : 'integral'}} </span>
+    <span [innerHTML]="transform(getLatex(isSeries ? '\\sum_{n=1}^{\\infty} b_n' : '\\int\\limits_{a}^{\\infty} g(x) \\, dx'))"></span>
+    <span>, while </span>
+    <span [innerHTML]="transform(getLatex(isSeries ? '\\sum_{n=1}^{\\infty} b_n' : '\\int\\limits_{a}^{\\infty} g(x) \\, dx'))"></span>
+    <span> is a majorant of </span>
+    <span [innerHTML]="transform(getLatex(isSeries ? '\\sum_{n=1}^{\\infty} a_n': '\\int\\limits_{a}^{\\infty} f(x) \\, dx'))"></span>
+    <span>, then: </span>
+    <ul>
+      <li>
+        <span >If </span>
+        <span [innerHTML]="transform(getLatex(isSeries ? '\\sum_{n=1}^{\\infty} b_n' : '\\int\\limits_{a}^{\\infty} g(x) \\, dx'))">
+        </span>
+        <span > converges (thus a <b>convergent majorant</b> exists), then </span>
+        <span [innerHTML]="transform(getLatex(isSeries ? '\\sum_{n=1}^{\\infty} a_n': '\\int\\limits_{a}^{\\infty} f(x) \\, dx'))">
+        </span>
+        <span > also converges. </span>
+      </li>
+      <li>
+        <span >If </span>
+        <span [innerHTML]="transform(getLatex(isSeries ? '\\sum_{n=1}^{\\infty} a_n': '\\int\\limits_{a}^{\\infty} f(x) \\, dx'))">
+        </span>
+        <span > diverges (thus a <b>divergent minorant</b> exists), then </span>
+        <span [innerHTML]="transform(getLatex(isSeries ? '\\sum_{n=1}^{\\infty} b_n' : '\\int\\limits_{a}^{\\infty} g(x) \\, dx'))">
+        </span>
+        <span > also diverges. </span>
+      </li>
+    </ul>
+    <div class="footer">
+      <button (click)="closeModal()">Close</button>
+    </div>
+  </div>
+</div>

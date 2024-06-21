@@ -1,10 +1,13 @@
 Help menük:
-Nagy help ablak a játékszabályokkal, az összes releváns szabállyal
-Kérdőjel ikon, amire rámenve látható a direct comparison test definíció
+Nagy help ablak a játékszabályokkal, az összes releváns szabállyal		KÉSZ
+Kérdőjel ikon, amire rámenve látható a direct comparison test definíció		KÉSZ
 
 Assisted game mode:
-Kártyára kattintva jelenjen meg a specifikus szabály
-Írja ki oldalt pl, vagy a név mellett, hogy hány lehetséges pár van a kártyái között
+Menübe felvéve az assisted mode									KÉSZ
+Kártyára kattintva jelenjen meg a specifikus szabály						KÉSZ
+Írja ki oldalt pl, vagy a név mellett, hogy hány lehetséges pár van a kártyái között		KÉSZ
+
+Főmenü design					KÉSZ
 
 Practice:
 Piros keret eltüntetése				KÉSZ
@@ -14,8 +17,16 @@ Rossz válasznál írja ki a vonatkozó szabályt	KÉSZ
 Időmérés					KÉSZ
 Összefoglaló a játék végén			KÉSZ
 Haladási sáv jó/rossz válaszok			KÉSZ
+Integrálokra külön magyarázat			KÉSZ
 
 Integrál pakli felvitele			KÉSZ
 Körök implementálása				KÉSZ
 Robot játékos párosítson is néha
+
+Blue YETI:
+History kijavítása túlcsordulás			KÉSZ
+Büntetés hibázáskor
+Results rész szebben kiírva
+Várakozási képernyő a játék elején
+Alert helyett toastok valamilyen úton-módon
 

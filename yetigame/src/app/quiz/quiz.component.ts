@@ -5,11 +5,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CardDTO } from '../models/dto';
 import { CommonModule } from '@angular/common';
 import { ExplanationsComponent } from '../explanations/explanations.component';
+import { DeckService } from '../services/deck.service';
+import { ComparisonTestModalComponent } from '../comparison-test-modal/comparison-test-modal.component';
 
 @Component({
   selector: 'app-quiz',
   standalone: true,
-  imports: [CommonModule, ExplanationsComponent],
+  imports: [CommonModule, ExplanationsComponent, ComparisonTestModalComponent],
   templateUrl: './quiz.component.html',
   styleUrl: './quiz.component.css',
 })
@@ -36,17 +38,28 @@ export class QuizComponent implements OnInit, AfterViewInit {
   isGameOver = false;
   sumType = '';
   answers: boolean[] = [];
+  integrals: boolean = false;
+  isHelpModalOn = false;
   private isTimerToBeReset = false;
   private previewCanvases: HTMLCanvasElement[] = [];
   private guesserCanvas!: HTMLCanvasElement;
 
   constructor(
     private cardService: CardService,
+    private deckService: DeckService,
     private currentRoute: ActivatedRoute,
     private router: Router) { }
 
   ngOnInit() {
     const deckId = this.currentRoute.snapshot.params['deckId'];
+    this.deckService.getOne(deckId).subscribe({
+      next: (deck) => {
+        this.integrals = (deck.type == 'integrals');
+      },
+      error: (error) => {
+        console.error('Error fetching cards:', error.message);
+      }
+    })
     this.cardService.getRandomSelection(deckId, this.EXERCISE_NUMBER).subscribe({
       next: (cards) => {
         this.cards = cards;
@@ -91,7 +104,7 @@ export class QuizComponent implements OnInit, AfterViewInit {
   }
 
   backToMenu(){
-    this.router.navigateByUrl('menu');
+    this.router.navigateByUrl('');
   }
 
   repeatArray() {
@@ -166,5 +179,13 @@ export class QuizComponent implements OnInit, AfterViewInit {
 
     });
     this.equationImage.src = renderLatex(this.cards[this.current_index].latex);
+  }
+
+  closeHelp(){
+    this.isHelpModalOn = false;
+  }
+
+  openHelp(){
+    this.isHelpModalOn = true;
   }
 }

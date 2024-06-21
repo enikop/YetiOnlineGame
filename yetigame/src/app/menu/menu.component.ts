@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { DeckService } from '../services/deck.service';
 import { DeckDTO } from '../models/dto';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-menu',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.css'
 })
@@ -16,67 +17,73 @@ export class MenuComponent {
   deckService: DeckService;
   isPractiseSelected:boolean = false;
   decks: DeckDTO[] = [];
-  gameSelected: string = 'yeti';
+  isPractiseOpen = false;
+  isPlayOpen = false;
+  isAssistedPlayOpen = false;
 
   constructor(router:Router, deckService: DeckService){
     this.router = router,
     this.deckService = deckService;
   }
 
-  showDeckSelectionWindow(isPractise:boolean){
+  ngOnInit(){
+    this.loadDecks();
+  }
+
+  loadDecks(){
     this.deckService.getAll().subscribe({
       next: (decks) => {
         this.decks = decks;
-        const choiceContainer = document.getElementById(isPractise ? 'deck-choice-practise' : 'deck-choice-play')!;
-        choiceContainer.classList.toggle('choice-disabled');
-        choiceContainer.innerHTML = '';
-        this.decks.forEach((deck)=>{
-          const newDiv = document.createElement("div");
-          newDiv.classList.add('deck-card');
-          newDiv.innerHTML = '<div><h3>Deck '+deck.id+'</h3><span>Type: </span>'+deck.type+'</div><div><span>Level: </span>'+deck.level+'</div>';
-          newDiv.addEventListener('click', (event)=> {this.navigateAway(deck.id)});
-          choiceContainer.appendChild(newDiv);
-        })
-        if(!isPractise){
-          document.getElementById('game-choice')!.classList.toggle('choice-disabled');
-        }
       },
       error: (error) => {
         console.error('Error fetching decks:', error.message);
-      }  
+      }
     })
   }
+
   navigateAway(deckId:number) {
     if(this.isPractiseSelected){
-      this.router.navigate(["/quiz/"+deckId]);
+      this.router.navigateByUrl("/quiz/"+deckId);
     }else{
-      this.router.navigate(["/"+this.gameSelected+"/"+deckId]);
-      //TODO: Navigate to play
+      this.router.navigateByUrl("/blue-yeti"+(this.isAssistedPlayOpen ? "-assisted/" : "/")+deckId);
     }
   }
-  selectGame(gameName:string){
-    this.gameSelected = gameName;
-    Array.from(document.getElementsByClassName('game-card')).forEach(element => {
-        element.classList.remove('selected-game');
-    });
-    document.getElementById(gameName)!.classList.add('selected-game');
-  }
-  hideAllSelectionWindows(exceptions:string[]){
-    Array.from(document.getElementsByClassName('choice')).forEach(element => {
-      if(element.getAttribute('id')!= null && !exceptions.includes(element.getAttribute('id')!)){
-        element.classList.add('choice-disabled');
-      }
-    });;
-  }
   startPractise(){
-    this.hideAllSelectionWindows(['deck-choice-practise']);
+    if(this.isPractiseOpen){
+      this.isPractiseOpen = false;
+      return;
+    }
     this.isPractiseSelected = true;
-    this.showDeckSelectionWindow(true);
+    this.isPractiseOpen = true;
+    this.isPlayOpen = false;
+    this.isAssistedPlayOpen = false;
   }
 
   startPlay(){
-    this.hideAllSelectionWindows(['game-choice','deck-choice-play']);
+    if(this.isPlayOpen){
+      this.isPlayOpen = false;
+      return;
+    }
     this.isPractiseSelected = false;
-    this.showDeckSelectionWindow(false);
+    this.isPractiseOpen = false;
+    this.isPlayOpen = true;
+    this.isAssistedPlayOpen = false;
+  }
+
+  startAssistedPlay(){
+    if(this.isAssistedPlayOpen){
+      this.isAssistedPlayOpen = false;
+      return;
+    }
+    this.isPractiseSelected = false;
+    this.isPractiseOpen = false;
+    this.isPlayOpen = false;
+    this.isAssistedPlayOpen = true;
+  }
+
+  navigateTo(link: string){
+    this.isPractiseOpen = false;
+    this.isPlayOpen = false;
+    this.router.navigateByUrl(link);
   }
 }

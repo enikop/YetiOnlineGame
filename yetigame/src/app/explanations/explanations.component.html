@@ -5,14 +5,14 @@
 </div>
 <div class="small-text"*ngIf="type == 'geometric'">
   <span class="explanation">The geometric series </span>
-  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=0}^{\\infty}aq^k\\ \\ \\left(q\\in\\mathbb{R}, a\\in\\mathbb{R}^+\\right)'))"></span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=0}^{\\infty}aq^n\\ \\ \\left(q\\in\\mathbb{R}, a\\in\\mathbb{R}^+\\right)'))"></span>
   <span class="explanation"> converges, if </span>
   <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\left|{q}\\right| < 1'))"></span>
   <span class="explanation">, otherwise it diverges. </span>
 </div>
 <div class="small-text" *ngIf="type == 'constant'">
   <span class="explanation">The constant series </span>
-  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty}k\\ \\ \\left(k\\in\\mathbb{R}\\right)'))"></span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty}k\\ \\ \\left(k\\in\\mathbb{R}, \\ k\\neq 0\\right)'))"></span>
   <span class="explanation"> always diverges.</span>
 </div>
 <div class="small-text" *ngIf="type == 'hyperharmonic'">
@@ -21,4 +21,13 @@
   <span class="explanation"> converges, if </span>
   <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\alpha > 1'))"></span>
   <span class="explanation">, otherwise it diverges. </span>
+</div>
+<div class="small-text" *ngIf="integral" style="margin-top: 1em">
+  <span class="explanation">If </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('f(x)'))"></span>
+  <span> is monotone decreasing, the infinite series </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=N}^{\\infty}f(n)'))"></span>
+  <span class="explanation"> converges to a real number if and only if the improper integral</span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty}f(x)\\,dx'))"></span>
+  <span class="explanation"> converges.</span>
 </div>

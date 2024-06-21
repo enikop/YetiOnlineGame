@@ -1,0 +1,157 @@
+<div class="container">
+  <div id="header">
+    <div class="title">
+      Blue Yeti
+    </div>
+    <div class="subtitle">
+      <div>
+        Multiplayer didactic
+      </div>
+      <div>
+        game for improper integrals and infinite sums
+      </div>
+    </div>
+  </div>
+  <div class="instructions">
+    <div class="paragraph-heading">
+      Gameplay
+    </div>
+    <div class="paragraph">
+      Blue Yeti can be played by <b>4</b> players at a time. In each round, the players take their turns sequentially.
+      A turn consists of two phases:
+      <ul>
+        <li>
+          <div><b>Drawing</b></div>
+          The drawing phase, with an allocated timer of {{drawingDuration}} seconds, refers to picking a card from the
+          hand
+          of the next player in line by clicking on it. The newly drawn card is placed randomly into the current
+          player's hand but is highlighted by
+          a dark border section.
+        </li>
+        <li>
+          <div><b>Pairing</b></div>
+          In the pairing phase, the current player forms valid pairs of the infinite sums/improper integrals
+          in their hand. A valid pair is made up of a divergent sum/integral and its divergent minorant or a convergent
+          sum/integral and its convergent majorant.
+          The inequality between the members of a pair should always be strict. Next, the current player places the
+          pairs onto the correct field (convergent or divergent) of the pairing area.
+          If no more valid pairs are found, the <i>End turn</i> button can be clicked, marking the start of the
+          following drawing phase.
+        </li>
+      </ul>
+      If the timers ever run out, drawing is done randomly, while the pairing phase simply ends.
+      The objective of the players is to get rid of all their cards. Once they succeed to do so, they are out of the
+      game.
+      In the end, the last player holding the pairless Blue Yeti card is deemed the loser of the game.
+    </div>
+  </div>
+  <div class="instructions">
+    <div class="paragraph-heading">Drawing</div>
+    <div class="paragraph">
+      Drawing in the game is implemented in a similar way to manual card games, meaning that the players can organise their
+      hands freely, and the current player picking e. g. the second card from the left in the UI
+      means the card that has been put in the second position by the next player in line will be drawn.
+      This is why continuous rearranging of one's hand is advised, even though newly drawn cards are put in random positions.
+    </div>
+  </div>
+  <div class="instructions">
+    <div class="paragraph-heading">Pairing</div>
+    <div class="paragraph">
+      In the game Blue Yeti, pairing is done based on the direct comparison test of infinite series and improper
+      integrals. These two topics are interconnected through the integral test of infinte series.
+    </div>
+    <div class="rule-name">Integral test</div>
+    <div class="paragraph rule">
+      <span >Consider an integer <i>N</i> and a non-negative function <i>f</i> defined on the
+        unbounded interval
+        <i>[N, ∞)</i>, on which it is monotone decreasing. Then the infinite series</span>
+      <span [innerHTML]="transform(getLatex('\\ \\sum_{n=N}^{\\infty}f(n)'))"></span>
+      <span > converges to a real number <b>if and only if</b> the improper integral</span>
+      <span [innerHTML]="transform(getLatex('\\ \\int_{N}^{\\infty}f(x)\\,dx'))"></span>
+      <span > converges.</span>
+    </div>
+    <div class="paragraph">
+      Therefore, it is sufficient to remember the convergence tests applicable to infinite series to
+      deduce the convergence property of the corresponding improper integrals accordingly.
+      The direct comparison test of infinite sums consists of finding divergent minorant or convergent majorant series
+      for the examined infinite sum in order to prove its convergence or divergence.
+    </div>
+    <div class="left">
+      <div class="rule-name">Direct comparison test</div>
+      <div class="paragraph rule">
+        <span >If the inequality </span>
+        <span [innerHTML]="transform(getLatex('0 \\leq a_n \\leq b_n'))"></span>
+        <span> holds for all <i>n</i> sufficiently large, indicating that the infinite series </span>
+        <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty} a_n'))"></span>
+        <span > is a minorant of the series </span>
+        <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty} b_n'))"></span>
+        <span>, while </span>
+        <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty} b_n'))"></span>
+        <span> is a majorant of </span>
+        <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty} a_n'))"></span>
+        <span>, then: </span>
+        <ul>
+          <li>
+            <span >If </span>
+            <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty} b_n'))">
+            </span>
+            <span > converges (thus a <b>convergent majorant</b> exists), then </span>
+            <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty} a_n'))">
+            </span>
+            <span > also converges. </span>
+          </li>
+          <li>
+            <span >If </span>
+            <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty} a_n'))">
+            </span>
+            <span > diverges (thus a <b>divergent minorant</b> exists), then </span>
+            <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty} b_n'))">
+            </span>
+            <span > also diverges. </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="paragraph">To be able to effectively employ the direct comparison test, it is crucial to
+      know certain convergence rules applicable to common types of infinite sums.</div>
+    <div class="rule-name">The nth term test for divergence</div>
+    <div class="paragraph rule">
+      <span >The series </span>
+      <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty} a_n'))"></span>
+      <span > diverges if </span>
+      <span [innerHTML]="transform(getLatex('\\lim_{n \\to \\infty} a_n \\neq 0'))"></span>
+      <span >. Therefore, the constant series </span>
+      <span
+        [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty}k\\ \\ \\left(k\\in\\mathbb{R}, \\ k\\neq 0\\right)'))"></span>
+      <span > always diverges.</span>
+    </div>
+    <div class="left">
+      <div class="rule-name">Harmonic series</div>
+      <div class="paragraph rule">
+        <span >The harmonic series </span>
+        <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty}\\frac{1}{n}'))"></span>
+        <span > diverges.</span>
+      </div>
+    </div>
+    <div class="rule-name">Hyperharmonic series</div>
+    <div class="paragraph rule">
+      <span >The hyperharmonic series </span>
+      <span
+        [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty}\\frac{1}{n^{\\alpha}}\\ \\ \\left(\\alpha\\in\\mathbb{R}\\right)'))"></span>
+      <span > converges, if </span>
+      <span [innerHTML]="transform(getLatex('\\alpha > 1'))"></span>
+      <span >, otherwise it diverges. </span>
+    </div>
+    <div class="left">
+      <div class="rule-name">Geometric series</div>
+      <div class="paragraph rule">
+        <span >The geometric series </span>
+        <span
+          [innerHTML]="transform(getLatex('\\sum_{n=0}^{\\infty}aq^n\\ \\left(q\\in\\mathbb{R},\\ a\\in\\mathbb{R}^+\\right)'))"></span>
+        <span > converges, if </span>
+        <span [innerHTML]="transform(getLatex('\\left|{q}\\right| < 1'))"></span>
+        <span >, otherwise it diverges. </span>
+      </div>
+    </div>
+  </div>
+</div>

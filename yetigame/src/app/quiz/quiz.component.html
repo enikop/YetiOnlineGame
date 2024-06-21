@@ -1,4 +1,7 @@
 <div id="background">
+  <div class="help-modal-opener" (click)="openHelp()">
+    ?
+  </div>
   <div id="main-container">
     <h3>Practice</h3>
     <div id="guesser-container" [style.visibility]="isGameOver ? 'hidden': 'visible'">
@@ -11,7 +14,7 @@
           <div *ngIf="isCorrect">Your answer is correct.</div>
           <div *ngIf="!isCorrect">
             <div style='margin-bottom:1rem'>Your answer is incorrect.</div>
-            <app-explanations [type] = "sumType"></app-explanations>
+            <app-explanations [type] = "sumType" [integral]="integrals"></app-explanations>
           </div>
         </div>
         <div id="guess-buttons" *ngIf="!isResultShown">
@@ -46,4 +49,5 @@
     <div id="timer">{{ timer }}</div>
     <div id="score">{{ score }}</div>
   </div>
+  <app-comparison-test-modal [isVisible]="isHelpModalOn" [isSeries]="!integrals" (closingModal)="closeHelp()"></app-comparison-test-modal>
 </div>

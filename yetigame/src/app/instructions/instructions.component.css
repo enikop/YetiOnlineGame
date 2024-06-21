@@ -1,0 +1,90 @@
+.container {
+  position: relative;
+  min-height: 100vh;
+  background-color: var(--dark-blue);
+  background: radial-gradient(var(--light-blue), var(--dark-blue));
+  padding-bottom: 1rem;
+}
+
+#header{
+  text-align: center;
+  color: white;
+  padding: 2rem 0;
+}
+
+.title{
+  /*font-size: 6.5rem;
+  text-shadow: 5px 5px 6px rgba(0, 30, 108, 0.9);
+  font-family: "Sacramento", cursive;*/
+
+  font-size: 8rem;
+  background-color: var(--dark-blue);
+  color: transparent;
+  font-family: "Sacramento", cursive;
+  text-shadow: 2px 2px 2px white;
+  -webkit-background-clip: text;
+     -moz-background-clip: text;
+          background-clip: text;
+}
+
+.subtitle{
+  margin-top: -1.8rem;
+  font-size: 1.2rem;
+  font-family:"Spinnaker", sans-serif;
+}
+.instructions{
+  background-color: white;
+  color: var(--dark-blue);
+  border-radius: 1rem;
+  padding: 1rem 2rem;
+  width: 84%;
+  box-sizing: border-box;
+  margin-left: 8%;
+  margin-bottom: 2rem;
+  font-size: 1.2rem;
+  text-align: justify;
+  font-family:"Spinnaker", sans-serif;
+}
+
+.paragraph {
+  margin-bottom: 0.5rem;
+}
+
+.rule {
+  background-color: var(--mid-blue);
+  color: white;
+  border-radius: 0 1rem 1rem 1rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.rule-name {
+  text-wrap: nowrap;
+  width: fit-content;
+  padding: 0.5rem 1rem;
+  font-size: 1.5rem;
+  font-weight: bolder;
+  background-color: var(--mid-blue);
+  color: white;
+  border-radius: 1rem 1rem  0 0;
+}
+
+.left .rule:nth-child(even){
+  border-radius: 1rem 0 1rem 1rem;
+  background-color: var(--dark-blue);
+}
+
+.left .rule-name {
+  margin-left: 100%;
+  transform: translateX(-100%);
+  background-color: var(--dark-blue);
+}
+
+.paragraph-heading{
+  text-align: center;
+  font-size: 3.5rem;
+  margin: 1rem 0;
+  color: var(--dark-blue);
+  font-family: "Sacramento", cursive;
+}
+
