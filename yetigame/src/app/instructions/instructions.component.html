@@ -34,7 +34,10 @@
           in their hand. A valid pair is made up of a divergent sum/integral and its divergent minorant or a convergent
           sum/integral and its convergent majorant.
           The inequality between the members of a pair should always be strict. Next, the current player places the
-          pairs onto the correct field (convergent or divergent) of the pairing area.
+          pairs onto the correct field (convergent or divergent) of the pairing area. Any pairs put onto the central card slots
+          are submitted automatically.
+          If a faulty pairing is made, the player's turn ends. The previous correct pairings in a game, made by all the players,
+          can be seen in the history sidebar on the left of the screen, that can be opened by clicking the clock symbol in the top left corner.
           If no more valid pairs are found, the <i>End turn</i> button can be clicked, marking the start of the
           following drawing phase.
         </li>
@@ -42,7 +45,9 @@
       If the timers ever run out, drawing is done randomly, while the pairing phase simply ends.
       The objective of the players is to get rid of all their cards. Once they succeed to do so, they are out of the
       game.
-      In the end, the last player holding the pairless Blue Yeti card is deemed the loser of the game.
+      In the end, the last player holding the pairless Blue Yeti card is deemed the loser of the game and the list of results
+      containing
+      the number of mistakes made by players in the game is displayed.
     </div>
   </div>
   <div class="instructions">
@@ -74,7 +79,9 @@
       Therefore, it is sufficient to remember the convergence tests applicable to infinite series to
       deduce the convergence property of the corresponding improper integrals accordingly.
       The direct comparison test of infinite sums consists of finding divergent minorant or convergent majorant series
-      for the examined infinite sum in order to prove its convergence or divergence.
+      for the examined infinite sum in order to prove its convergence or divergence. The definition of the test itself
+      can be accessed all throughout the game - practice and play modes alike - by clicking the question mark icon in the blue circle that
+      appears in one of the corners of the screen.
     </div>
     <div class="left">
       <div class="rule-name">Direct comparison test</div>
@@ -152,6 +159,37 @@
         <span [innerHTML]="transform(getLatex('\\left|{q}\\right| < 1'))"></span>
         <span >, otherwise it diverges. </span>
       </div>
+    </div>
+  </div>
+  <div class="instructions">
+    <div class="paragraph-heading">Bots</div>
+    <div class="paragraph">
+      If a player quits a game that has already started, a bot operated by the backend server takes their place.
+      Bots are capable of drawing cards randomly and making one correct pairing per round if their hands allow.
+      Therefore, they can win or lose a game anytime, just like regular humans. However, the time limits for bot moves are
+      set much lower, allocating 1-1 seconds for both the drawing and the pairing phase to promote a smooth gameplay experience
+      and avoid unnecessary delays.
+      The pairing process of bots is very fast, so
+      it is recommended to use the history sidebar to observe their pairings.
+    </div>
+    <div class="paragraph">
+      When a bot comes into play, all other players are notified in a message that appears at the top of their screen.
+      The summary of a game's results also specifies whether a given player was a bot or a human.
+    </div>
+  </div>
+  <div class="instructions">
+    <div class="paragraph-heading">For beginners</div>
+    <div class="paragraph">
+      Beginners can benefit from the <i>Practice</i> feature of Blue Yeti, referring to a simple quiz where players have to
+      guess the convergence property of randomly chosen infinite series or improper integrals. The correct answers
+      are revealed immediately. Each correct guess earns a point,
+      while each faulty response makes a short explanation related to the subtype of the given sum or integral appear. At the end
+      of the quiz, a summary is displayed containing the total number of correct and incorrect guesses, as well as the solution time.
+    </div>
+    <div class="paragraph">
+      In addition, a special game mode of Blue Yeti is available directly from the main menu named assisted mode. In this mode, a player is kept up to date
+      about the number of possible pairs in their hand via a counter next to their username. They can also access
+      particular convergence rules applicable to a given sum or integral by hovering over the card featuring said sum/integral.
     </div>
   </div>
 </div>
