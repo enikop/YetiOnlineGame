@@ -25,8 +25,9 @@ Robot játékos párosítson is néha
 
 Blue YETI:
 History kijavítása túlcsordulás			KÉSZ
-Büntetés hibázáskor
-Results rész szebben kiírva
+Büntetés hibázáskor				Egyelőre körvégével kiváltva
+Mistake count					KÉSZ
+Results rész szebben kiírva			KÉSZ
 Várakozási képernyő a játék elején
 Alert helyett toastok valamilyen úton-módon
 

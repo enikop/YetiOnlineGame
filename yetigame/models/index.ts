@@ -36,6 +36,13 @@ export interface SocketUser {
   inGame: boolean;
   leftGame: boolean;
   currentHand: CardExtended[];
+  mistakeNum: number;
+}
+
+export interface EndGameUserData {
+  playerId: string;
+  userName: string;
+  mistakeNum: number;
 }
 export interface Game {
   id: number;
@@ -43,7 +50,7 @@ export interface Game {
   full: boolean;
   players: SocketUser[];
   gameState: GameState;
-  result: string[];
+  result: EndGameUserData[];
   timer: number;
   resetDrawingTimer: boolean;
   resetPairingTimer: boolean;

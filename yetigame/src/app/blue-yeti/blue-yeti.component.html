@@ -123,11 +123,23 @@
                 (mouseleave)="onCardLeave($event)" (click)="onCardClick(players[1], index)"></div>
         </div>
     </div>
-    <div id="result-popup" *ngIf="result.length>0">
-        <div>Results:</div>
-        <div *ngFor="let playerId of result; let i = index">
-            <div>{{i+1}}. {{playerId}}</div>
-        </div>
+    <div id="results" *ngIf="result.length > 0">
+      <div class="shader"></div>
+      <div id="result-popup">
+          <div class="result-title">Results</div>
+          <div class="result-summary">
+              @for(userData of result; track $index){
+                <div class="result-placement">
+                  <div class="placement">{{$index+1}}.</div>
+                  <div class="name" [class.own-placement]="userData.userName == myUserName">{{userData.userName}} <span>({{userData.mistakeNum}} mistakes)</span></div>
+                </div>
+              }
+          </div>
+          <div class="popup-footer">
+            <a class="button" (click)="playAgain()">Again</a>
+            <a class="button" (click)="backToMenu()">Menu</a>
+          </div>
+      </div>
     </div>
     <div id="sidebar" [class.active]="isSidebarActive">
         <div id="sidebar-history">

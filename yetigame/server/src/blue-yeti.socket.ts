@@ -2,7 +2,7 @@ import { Response } from "express";
 import { Server, ServerOptions } from "socket.io";
 import { CardGroupController } from './controller/card-group.controller';
 import { CardGroup } from './entity/CardGroup';
-import { ClientSocketMessage, DRAW_TIME, PAIR_TIME, ServerSocketMessage } from '../../models';
+import { ClientSocketMessage, DRAW_TIME, EndGameUserData, PAIR_TIME, ServerSocketMessage } from '../../models';
 import { Game, SocketUser, PairingNotification, CardExtended } from '../../models';
 import { IncomingMessage, ServerResponse } from "http";
 import { Server as HttpServer } from "http";
@@ -11,7 +11,7 @@ export class SocketHandler {
 
   private io: Server;
   private MAX_PLAYER_NUMBER = 4;
-  private DECK_SIZE: number = 28;
+  private DECK_SIZE: number = 5;
   private games: Game[] = [];
 
   constructor(httpServer: HttpServer<typeof IncomingMessage, typeof ServerResponse> | Partial<ServerOptions>) {
@@ -29,7 +29,8 @@ export class SocketHandler {
         userName: "Player" + userId,
         inGame: true,
         leftGame: false,
-        currentHand: []
+        currentHand: [],
+        mistakeNum: 0
       };
       const gameId = this.handleJoin(deckId, socketUser);
       socket.join('room' + gameId);
@@ -138,13 +139,15 @@ export class SocketHandler {
       player.currentHand.splice(lessIndex, 1);
       const greaterIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.greater.id)[0]);
       player.currentHand.splice(greaterIndex, 1);
+    } else if(checkResult.greater && checkResult.less) { //else if one of the pairing spaces is full
+      player.mistakeNum++;
     }
   }
 
   private checkForWin(playerToCheck: SocketUser, game: Game) {
     if (playerToCheck.currentHand.length == 0) {
       playerToCheck.inGame = false;
-      game.result.push(playerToCheck.playerId);
+      game.result.push({playerId: playerToCheck.playerId, userName: playerToCheck.userName, mistakeNum: playerToCheck.mistakeNum});
       this.io.to('room' + game.id).emit(ServerSocketMessage.PlayerOut, playerToCheck.playerId);
       const inGamePlayers = game.players.filter(player => player.inGame);
       if (inGamePlayers.length == 1) {
@@ -152,7 +155,12 @@ export class SocketHandler {
         game.resetPairingTimer = true;
         game.isPairingTimerRunning = true;
         game.isDrawingTimerRunning = true;
-        this.io.to('room' + game.id).emit(ServerSocketMessage.EndGame, { 'result': game.result, 'loser': inGamePlayers[0].playerId, 'complete': true });
+        const loser : EndGameUserData = {
+          playerId: inGamePlayers[0].playerId,
+          userName: inGamePlayers[0].userName,
+          mistakeNum: inGamePlayers[0].mistakeNum
+        }
+        this.io.to('room' + game.id).emit(ServerSocketMessage.EndGame, { 'result': game.result, 'loser': loser, 'complete': true });
       }
     }
   }

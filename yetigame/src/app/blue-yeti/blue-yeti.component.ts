@@ -1,15 +1,16 @@
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, QueryList, ViewChildren, inject } from '@angular/core';
 import { BlueYetiService, SpotType } from '../services/blue-yeti.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CardDTO} from '../models/dto';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { renderLatex } from '../latexhandler';
 import { Subscription } from 'rxjs';
-import { ServerSocketMessage, SimpleCard } from '../../../models';
+import { DRAW_TIME, EndGameUserData, ServerSocketMessage, SimpleCard } from '../../../models';
 import { ComparisonTestModalComponent } from '../comparison-test-modal/comparison-test-modal.component';
 import { DeckService } from '../services/deck.service';
 import { ExplanationsComponent } from '../explanations/explanations.component';
+import { routes } from '../app.routes';
 
 type TurnPhase = 'draw' | 'pair';
 
@@ -33,11 +34,11 @@ interface Pair{
   styleUrl: './blue-yeti.component.css'
 })
 export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
-  timer : number = 10;
-  DECK_SIZE: number = 29;
+  timer : number = DRAW_TIME;
   CARD_WIDTH: number = 210;
   CARD_HEIGHT: number = 140;
-  myId: string = "";
+  myId: string = "1";
+  myUserName: string = "deathly_hallow";
   players: Player[] = [
   { playerId: '1', userName: 'deathly_hallow', cardNumber: 0 },
   { playerId: '2', userName: 'vincent', cardNumber: 4 },
@@ -57,7 +58,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
   convergentGreaterSlot:SimpleCard[]=[];
 
   previousPairs: Pair[] = [];
-
+  router = inject(Router);
   isSidebarActive: boolean = false;
 
   firstRow: SimpleCard[] = [
@@ -78,7 +79,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
   blueYetiService!: BlueYetiService;
   drawIndex: number = -1;
   yetiImage!: HTMLImageElement;
-  result: string[] = [];
+  result: EndGameUserData[] = [];
   newCardId:string = '';
   isSeries: boolean = true;
   isHelpModalOn = false;
@@ -123,6 +124,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
     })
     this.blueYetiService = new BlueYetiService();
     this.myId = Math.floor(Math.random() * 100).toString(); //temp line
+    this.myUserName = 'Player'+this.myId; //temp line
     this.blueYetiService.connect(deckId, this.myId);
     this.handSubscription = this.blueYetiService.getObservable().subscribe((received) => {
       if(received.type == ServerSocketMessage.InitHand){
@@ -161,7 +163,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
     if(resultData.complete){
       this.result = resultData.result;
       this.result.push(resultData.loser);
-      if(resultData.loser == this.myId){
+      if(resultData.loser.playerId == this.myId){
         window.alert('You lost :(');
       }
     } else {
@@ -187,7 +189,10 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
       window.alert("Ügyes!");
       if(this.isAssistedModeOn) this.blueYetiService.inquirePairNumber();
     }
-    if(this.turnId == this.myId && !feedbackData.valid) window.alert(feedbackData.message);
+    if(this.turnId == this.myId && !feedbackData.valid){
+      window.alert(feedbackData.message);
+      this.endTurn();
+    }
 
     //Actions for everybody
     if(feedbackData.valid){
@@ -489,5 +494,13 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
 
   openHelp(){
     this.isHelpModalOn = true;
+  }
+
+  backToMenu(){
+    this.router.navigateByUrl('');
+  }
+
+  playAgain(){
+    window.location.reload();
   }
 }
