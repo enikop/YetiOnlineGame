@@ -21,13 +21,16 @@ Integrálokra külön magyarázat			KÉSZ
 
 Integrál pakli felvitele			KÉSZ
 Körök implementálása				KÉSZ
-Robot játékos párosítson is néha
+Robot játékos párosítson is néha		KÉSZ mindig de max egyet
+Robot játékos nem működik több egymás utánira	KÉSZ
 
 Blue YETI:
 History kijavítása túlcsordulás			KÉSZ
 Büntetés hibázáskor				Egyelőre körvégével kiváltva
 Mistake count					KÉSZ
 Results rész szebben kiírva			KÉSZ
-Várakozási képernyő a játék elején
-Alert helyett toastok valamilyen úton-módon
+Várakozási képernyő a játék elején		KÉSZ
+Alert helyett toastok valamilyen úton-módon 	KÉSZ very simple
+
+NÉHA A ROBOT JÁTÉKOSNÁL AZ EGYMÁSTÓL HÚZÁS VALAMELYIK FÁZISA BEAKAD 0-NÁL
 

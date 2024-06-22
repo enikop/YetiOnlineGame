@@ -1,4 +1,5 @@
 <div class="container">
+    <div id="toast" [class.show]="message">{{message}}</div>
     <div class="timer" [class.timer-low]="timer < 5">
       {{timer}}
     </div>
@@ -131,13 +132,29 @@
               @for(userData of result; track $index){
                 <div class="result-placement">
                   <div class="placement">{{$index+1}}.</div>
-                  <div class="name" [class.own-placement]="userData.userName == myUserName">{{userData.userName}} <span>({{userData.mistakeNum}} mistakes)</span></div>
+                  <div class="name" [class.own-placement]="userData.userName == myUserName">{{userData.userName}} <span>({{userData.mistakeNum}} mistakes) {{userData.leftGame ? '[robot player]' : ''}}</span></div>
                 </div>
               }
           </div>
           <div class="popup-footer">
             <a class="button" (click)="playAgain()">Again</a>
             <a class="button" (click)="backToMenu()">Menu</a>
+          </div>
+      </div>
+    </div>
+    <div id="waiting" *ngIf="!hasGameBegun">
+      <div class="shader"></div>
+      <div id="wait-popup">
+          <div class="wait-text">Waiting for other players to join...</div>
+          <div class="loading-container">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+          <div class="popup-footer">
+            <a class="button" (click)="backToMenu()">Back to menu</a>
           </div>
       </div>
     </div>

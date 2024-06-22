@@ -445,7 +445,7 @@ html {
   z-index: 3;
 }
 
-#result-popup {
+#result-popup, #wait-popup {
   z-index: 4;
   display: flex;
   flex-direction: column;
@@ -463,6 +463,46 @@ html {
   color: white;
   font-size: 1.5rem;
   font-family: 'Spinnaker', sans-serif;
+}
+
+#wait-popup {
+  font-size: 2rem;
+}
+
+.loading-container {
+  margin-top: 2rem;
+  display: flex;
+  gap: 10px;
+}
+.dot {
+  width: 15px;
+  height: 15px;
+  background-color: white;
+  border-radius: 50%;
+  animation: blink 1s infinite;
+}
+.dot:nth-child(1) {
+  animation-delay: 0s;
+}
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+.dot:nth-child(4) {
+  animation-delay: 0.6s;
+}
+.dot:nth-child(5) {
+  animation-delay: 0.8s;
+}
+@keyframes blink {
+  0%, 100% {
+      background-color: white;
+  }
+  50% {
+      background-color: var(--dark-blue);
+  }
 }
 
 .result-summary {
@@ -531,4 +571,47 @@ html {
 .own-placement {
   color: var(--dark-blue);
   font-weight: bolder;
+}
+
+#toast {
+  visibility: hidden;
+  width: fit-content;
+  background-color: rgba(0, 15, 56, 0.9);
+  color: #fff;
+  text-align: center;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  position: fixed;
+  z-index: 2;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 1rem;
+  font-size: 1.2rem;
+}
+
+#toast.show {
+  visibility: visible;
+  -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+/* Animations to fade the snackbar in and out */
+@-webkit-keyframes fadein {
+  from {top: 0; opacity: 0;}
+  to {top: 1rem; opacity: 1;}
+}
+
+@keyframes fadein {
+  from {top: 0; opacity: 0;}
+  to {top: 1rem; opacity: 1;}
+}
+
+@-webkit-keyframes fadeout {
+  from {top: 1rem; opacity: 1;}
+  to {top: 0; opacity: 0;}
+}
+
+@keyframes fadeout {
+  from {top: 1rem; opacity: 1;}
+  to {top: 0; opacity: 0;}
 }

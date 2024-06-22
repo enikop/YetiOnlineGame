@@ -43,6 +43,7 @@ export interface EndGameUserData {
   playerId: string;
   userName: string;
   mistakeNum: number;
+  leftGame: boolean;
 }
 export interface Game {
   id: number;
