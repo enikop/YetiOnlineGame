@@ -24,7 +24,7 @@
                 [cdkDropListConnectedTo]="[firstRowList, secondRowList, divGList, convLList, convGList]">
                 <div *ngIf="divergentLessSlot.length > 0" class="card" cdkDrag>
                     <div class="card-placeholder" *cdkDragPlaceholder></div>
-                    <canvas #cardCanvas id="canvas-{{divergentLessSlot[0].id}}"></canvas>
+                    <div id="latex-{{divergentLessSlot[0].id}}" class="latex-container" [class.yeti-card]="divergentLessSlot[0].latex=='y'" [innerHTML]="divergentLessSlot[0].latex_html"></div>
                 </div>
             </div>
             <div class="relation-symbol">&lt;</div>
@@ -33,7 +33,8 @@
                 [cdkDropListConnectedTo]="[firstRowList, secondRowList,  divLList, convLList, convGList]">
                 <div *ngIf="divergentGreaterSlot.length > 0" class="card" cdkDrag>
                     <div class="card-placeholder" *cdkDragPlaceholder></div>
-                    <canvas #cardCanvas id="canvas-{{divergentGreaterSlot[0].id}}"></canvas>
+                    <div id="latex-{{divergentGreaterSlot[0].id}}" class="latex-container" [class.yeti-card]="divergentGreaterSlot[0].latex=='y'" [innerHTML]="divergentGreaterSlot[0].latex_html"></div>
+
                 </div>
             </div>
         </div>
@@ -44,7 +45,7 @@
                 [cdkDropListConnectedTo]="[firstRowList, secondRowList,  divLList, divGList, convGList]">
                 <div *ngIf="convergentLessSlot.length > 0" class="card" cdkDrag>
                     <div class="card-placeholder" *cdkDragPlaceholder></div>
-                    <canvas #cardCanvas id="canvas-{{convergentLessSlot[0].id}}"></canvas>
+                    <div id="latex-{{convergentLessSlot[0].id}}" class="latex-container" [class.yeti-card]="convergentLessSlot[0].latex=='y'" [innerHTML]="convergentLessSlot[0].latex_html"></div>
                 </div>
             </div>
             <div class="relation-symbol">&lt;</div>
@@ -53,7 +54,7 @@
                 [cdkDropListConnectedTo]="[firstRowList, secondRowList,  divLList, divGList, convLList]">
                 <div *ngIf="convergentGreaterSlot.length > 0" class="card" cdkDrag>
                     <div class="card-placeholder" *cdkDragPlaceholder></div>
-                    <canvas #cardCanvas id="canvas-{{convergentGreaterSlot[0].id}}"></canvas>
+                    <div id="latex-{{convergentGreaterSlot[0].id}}" class="latex-container" [class.yeti-card]="convergentGreaterSlot[0].latex=='y'" [innerHTML]="convergentGreaterSlot[0].latex_html"></div>
                 </div>
             </div>
         </div>
@@ -80,7 +81,7 @@
                           <app-explanations [type]="item.subtype" [integral]="!isSeries"></app-explanations>
                         </div>
                         <div class="card-placeholder" *cdkDragPlaceholder></div>
-                        <canvas #cardCanvas id="canvas-{{item.id}}"></canvas>
+                        <div id="latex-{{item.id}}" class="latex-container" [class.yeti-card]="item.latex=='y'" [innerHTML]="item.latex_html"></div>
                     </div>
                     }
                 </div>
@@ -96,7 +97,7 @@
                           <app-explanations [type]="item.subtype" [integral]="!isSeries"></app-explanations>
                         </div>
                         <div class="card-placeholder" *cdkDragPlaceholder></div>
-                        <canvas #cardCanvas id="canvas-{{item.id}}"></canvas>
+                        <div id="latex-{{item.id}}" class="latex-container" [class.yeti-card]="item.latex=='y'" [innerHTML]="item.latex_html"></div>
                     </div>
                     }
                 </div>
@@ -164,13 +165,13 @@
             <h3>Convergent</h3>
             <div class="pair-container" id="conv-pair-container">
                 <div class="pair" *ngFor="let pair of getConvergentPreviousPairs(); let i = index">
-                    <canvas #convPairCanvas id="convpaircanvas-{{i}}"></canvas>
+                    <div [innerHTML]="transform(getLatex(pair.less.latex+'<'+pair.greater.latex))"></div>
                 </div>
             </div>
             <h3>Divergent</h3>
             <div class="pair-container" id="div-pair-container">
                 <div class="pair" *ngFor="let pair of getDivergentPreviousPairs(); let i = index">
-                    <canvas #divPairCanvas id="divpaircanvas-{{i}}"></canvas>
+                  <div [innerHTML]="transform(getLatex(pair.less.latex+'<'+pair.greater.latex))"></div>
                 </div>
             </div>
         </div>

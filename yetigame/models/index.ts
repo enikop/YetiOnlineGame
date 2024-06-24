@@ -1,3 +1,5 @@
+import { SafeHtml } from "@angular/platform-browser";
+
 export const DRAW_TIME = 10;
 export const PAIR_TIME = 50;
 
@@ -70,6 +72,7 @@ export interface SimpleCard {
   id: string;
   latex: string;
   subtype: string;
+  latex_html?: SafeHtml;
 }
 export interface GameState {
   convLess: CardExtended;

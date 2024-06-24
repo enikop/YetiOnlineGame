@@ -1,18 +1,18 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, QueryList, ViewChildren, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { BlueYetiService, SpotType } from '../services/blue-yeti.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CardDTO } from '../models/dto';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { renderLatex } from '../latexhandler';
+import { get_mathjax_svg, renderLatex } from '../latexhandler';
 import { Subscription } from 'rxjs';
 import { DRAW_TIME, EndGameUserData, ServerSocketMessage, SimpleCard } from '../../../models';
 import { ComparisonTestModalComponent } from '../comparison-test-modal/comparison-test-modal.component';
 import { DeckService } from '../services/deck.service';
 import { ExplanationsComponent } from '../explanations/explanations.component';
-import { routes } from '../app.routes';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
-type TurnPhase = 'draw' | 'pair';
+type TurnPhase = 'draw' | 'wait' | 'pair';
 
 interface Player {
     playerId: string,
@@ -33,7 +33,7 @@ interface Pair {
     templateUrl: './blue-yeti.component.html',
     styleUrl: './blue-yeti.component.css'
 })
-export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
+export class BlueYetiComponent implements OnInit, OnDestroy {
     timer: number = DRAW_TIME;
     CARD_WIDTH: number = 210;
     CARD_HEIGHT: number = 140;
@@ -49,9 +49,6 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
     currentDeck: (CardDTO | string)[] = ['y'];
     handSubscription: Subscription | undefined;
     giveCardSubscription: Subscription | undefined;
-    @ViewChildren('cardCanvas') canvasRefs!: QueryList<ElementRef<HTMLCanvasElement>>;
-    @ViewChildren('convPairCanvas') convPairRefs!: QueryList<ElementRef<HTMLCanvasElement>>;
-    @ViewChildren('divPairCanvas') divPairRefs!: QueryList<ElementRef<HTMLCanvasElement>>;
 
     divergentLessSlot: SimpleCard[] = [];
     divergentGreaterSlot: SimpleCard[] = [];
@@ -64,10 +61,8 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
 
     hasGameBegun = false;
 
-    firstRow: SimpleCard[] = [
-    ];
-    secondRow: SimpleCard[] = [
-    ];
+    firstRow: SimpleCard[] = [];
+    secondRow: SimpleCard[] = [];
     turnId: string = "";
     pullFromId: string = "";
     turnPhase: TurnPhase = 'draw';
@@ -83,6 +78,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
     deckService = inject(DeckService);
     currentRoute = inject(ActivatedRoute);
     cdr = inject(ChangeDetectorRef);
+    sanitizer = inject(DomSanitizer);
 
     ngOnInit(): void {
         this.yetiImage = new Image();
@@ -97,11 +93,6 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
         if (this.handSubscription) {
             this.handSubscription.unsubscribe();
         }
-    }
-
-    ngAfterViewInit() {
-        this.drawAllFormulas();
-        this.drawPairs();
     }
 
     initializeGame() {
@@ -200,8 +191,6 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
             }
             this.previousPairs.push({ less: feedbackData.less, greater: feedbackData.greater, convergent: feedbackData.convergent });
             this.cdr.detectChanges();
-            this.drawAllFormulas();
-            this.drawPairs();
         } else {
             //TODO: implement stealing
         }
@@ -216,6 +205,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
 
     placeCardDown(placementData: any) {
         if (placementData.userId == this.myId) return;
+        this.convertLatexToHtml([placementData.card]);
         this.players.filter(player => player.playerId == placementData.userId)[0].cardNumber--;
         switch (placementData.cardPlacement) {
             case 'div-less-spot': {
@@ -236,7 +226,6 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
             }
         }
         this.cdr.detectChanges();
-        this.drawAllFormulas();
     }
 
     placeCardBack(placementData: any) {
@@ -263,7 +252,6 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
             }
         }
         this.cdr.detectChanges();
-        this.drawAllFormulas();
     }
 
     nextPlayerTurn(playersData: any) {
@@ -310,6 +298,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
     receiveCard(cardData: any) {
         var card: SimpleCard = cardData;
         this.newCardId = card.id;
+        this.convertLatexToHtml([card]);
         var concatHand = [...this.firstRow, ...this.secondRow];
         const randomIndex = Math.floor(Math.random() * (concatHand.length + 1));
         concatHand.splice(randomIndex, 0, card);
@@ -363,7 +352,6 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.blueYetiService.replaceCard(event.container.data[event.currentIndex], event.previousContainer.id as SpotType, this.myId);
             }
             this.cdr.detectChanges();
-            this.drawAllFormulas();
         }
     }
 
@@ -380,13 +368,21 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
     onCardClick(player: Player, clickedIndex: number) {
         if (this.turnId == this.myId && player.playerId == this.pullFromId && this.turnPhase == 'draw') {
             this.blueYetiService.drawCard(clickedIndex, this.myId);
+            this.turnPhase = 'wait'
         }
         else console.log("Cannot pull card from this player");
+    }
+
+    convertLatexToHtml(hand: SimpleCard[]){
+      for(let card of hand){
+        card.latex_html = this.transform(this.getLatex(card.latex));
+      }
     }
 
 
     refreshFullGameState(hand: any) {
         var concatHand: SimpleCard[] = hand.hand;
+        this.convertLatexToHtml(concatHand);
         //get players and shift array so that the current player is the first (order is preserved)
         var players: Player[] = hand.players;
         this.refreshPlayers(players);
@@ -398,7 +394,6 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
         this.firstRow.splice(0, this.firstRow.length, ...concatHand.slice(0, 4));
         this.secondRow.splice(0, this.secondRow.length, ...concatHand.slice(4));
         this.cdr.detectChanges();
-        this.drawAllFormulas();
     }
 
     refreshPlayers(players: Player[]) {
@@ -411,61 +406,6 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
             //TODO: exception
         }
         this.hasGameBegun = true;
-    }
-
-    drawAllFormulas() {
-        this.canvasRefs.forEach((canvasRef) => {
-            var id = canvasRef.nativeElement.id.split('-')[1];
-            var concatHand = [...this.firstRow, ...this.secondRow, ...this.divergentGreaterSlot, ...this.divergentLessSlot, ...this.convergentGreaterSlot, ...this.convergentLessSlot];
-            if (id == this.newCardId) {
-                this.drawFormulaOntoCanvas(document.getElementById(canvasRef.nativeElement.id) as HTMLCanvasElement, concatHand.filter(card => card.id == id)[0].latex, this.CARD_HEIGHT, this.CARD_WIDTH, true);
-            } else {
-                this.drawFormulaOntoCanvas(document.getElementById(canvasRef.nativeElement.id) as HTMLCanvasElement, concatHand.filter(card => card.id == id)[0].latex, this.CARD_HEIGHT, this.CARD_WIDTH);
-            }
-        });
-    }
-
-    drawPairs() {
-        this.convPairRefs.forEach((canvas) => {
-            var id = parseInt(canvas.nativeElement.id.split('-')[1]);
-            var pair = this.getConvergentPreviousPairs()[id];
-            this.drawFormulaOntoCanvas(document.getElementById(canvas.nativeElement.id) as HTMLCanvasElement, pair.less.latex + "<" + pair.greater.latex, 75, 300);
-        })
-        this.divPairRefs.forEach((canvas) => {
-            var id = parseInt(canvas.nativeElement.id.split('-')[1]);
-            var pair = this.getDivergentPreviousPairs()[id];
-            this.drawFormulaOntoCanvas(document.getElementById(canvas.nativeElement.id) as HTMLCanvasElement, pair.less.latex + "<" + pair.greater.latex, 75, 300);
-        })
-    }
-
-    drawFormulaOntoCanvas(canvas: HTMLCanvasElement, latex: string, height: number, width: number, isNew: boolean = false) {
-        canvas.style.height = height + 'px';
-        canvas.style.width = width + 'px';
-        canvas.height = height * 3;
-        canvas.width = width * 3;
-        if (latex == 'y') {
-            const ctx = canvas.getContext("2d")!;
-            ctx.drawImage(this.yetiImage, 0, 0, canvas.width, canvas.height);
-        } else {
-            var equationImage = new Image();
-            equationImage.addEventListener("load", () => {
-                const ctx = canvas.getContext("2d")!;
-                let latexWidth = Math.min(equationImage.naturalWidth * 3.4, canvas.width);
-                let latexHeight = equationImage.naturalHeight * latexWidth / equationImage.naturalWidth;
-                let currentY = canvas.height / 2 - latexHeight / 2;
-                let currentX = canvas.width / 2 - latexWidth / 2;
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                if (isNew) {
-                    ctx.fillStyle = '#0B1A41';
-                    ctx.fillRect(0, 0, canvas.width, 15);
-                }
-                ctx.drawImage(equationImage, currentX, currentY, Math.min(latexWidth, canvas.width), Math.min(latexHeight, canvas.height));
-
-            });
-            equationImage.src = renderLatex(latex);
-        }
-
     }
 
     repeatArray(length: number): any[] {
@@ -505,5 +445,13 @@ export class BlueYetiComponent implements OnInit, OnDestroy, AfterViewInit {
         setTimeout(()=>{
             this.message = '';
         }, 3000)
+    }
+
+    getLatex(formula: string) {
+      return get_mathjax_svg( formula );
+    }
+
+    transform(svg: string): SafeHtml {
+      return this.sanitizer.bypassSecurityTrustHtml(svg);
     }
 }
