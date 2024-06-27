@@ -69,7 +69,7 @@ export interface CardExtended {
   convergent: boolean;
 }
 export interface SimpleCard {
-  id: string;
+  id: number;
   latex: string;
   subtype: string;
   latex_html?: SafeHtml;

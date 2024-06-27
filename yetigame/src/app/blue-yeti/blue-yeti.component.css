@@ -21,7 +21,7 @@ html {
   position: fixed;
   bottom: 20px;
   right: calc(24px + 1em);
-  z-index: 2;
+  z-index: 3;
 }
 
 .help-modal-opener:hover {
@@ -41,7 +41,7 @@ html {
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 2;
+  z-index: 3;
 }
 
 .timer-low {
@@ -183,6 +183,7 @@ html {
 .card,
 .card-placeholder,
 .card-slot {
+  position: relative;
   width: 210px;
   height: 140px;
   background-color: #f0f0f0;
@@ -256,14 +257,14 @@ html {
   align-items: flex-start;
   transform: translateX(calc(-100% + 3rem));
   transition: transform 0.2s;
-  z-index: 2;
+  text-align: center;
+  z-index: 3;
 }
 
 #sidebar-history {
   width: fit-content;
   height: 100vh;
   background-color: var(--light-blue);
-  text-align: center;
   overflow-y: auto;
 }
 
@@ -272,6 +273,7 @@ html {
 }
 
 #sidebar-history h2 {
+  text-align: center;
   background-image: linear-gradient(45deg, var(--dark-blue), #000);
   background-clip: text;
   -webkit-background-clip: text;
@@ -296,11 +298,10 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
   width: 3rem;
   height: 3rem;
   background-color: var(--mid-blue);
-  z-index: 2;
+  z-index: 3;
   margin-top: 1rem;
 }
 
@@ -313,12 +314,24 @@ html {
   padding: 1.5rem 0.3rem;
   color: #f0f0f0;
   margin: 2rem 1rem;
-  width: fit-content;
+  box-sizing: border-box;
   border-radius: 0.5rem;
+  text-align: justify;
 }
 
 .pair {
   margin: 0.4rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: end;
+}
+
+.pairing-player {
+  font-size: 0.8rem;
+  margin-left: 0.5rem;
+  text-align: right;
 }
 
 #conv-pair-container {
@@ -442,11 +455,11 @@ html {
   height: 100%;
   top: 0;
   left: 0;
-  z-index: 3;
+  z-index: 4;
 }
 
 #result-popup, #wait-popup {
-  z-index: 4;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -582,7 +595,7 @@ html {
   border-radius: 0.5rem;
   padding: 1rem;
   position: fixed;
-  z-index: 2;
+  z-index: 3;
   left: 50%;
   transform: translateX(-50%);
   top: 1rem;
@@ -619,6 +632,8 @@ html {
 .latex-container{
   width: 210px;
   height: 140px;
+  padding: 12px;
+  box-sizing: border-box;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -627,6 +642,22 @@ html {
   color: #000;
   background-image: url('../../assets/Keret.png');
   background-size: cover;
+}
+
+.new-card{
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  color: white;
+  font-size: 0.8rem;
+  background-color: var(--mid-blue);
+  width: 2.5rem;
+  height: 2.5rem;
+  line-height: 2.5rem;
+  text-align: center;
+  border-radius: 50%;
+  box-shadow: 0.1rem 0.1rem 0.5rem rgba(0, 0, 0, 0.6);
 }
 
 .yeti-card{

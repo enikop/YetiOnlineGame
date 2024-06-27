@@ -22,7 +22,10 @@
   <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\alpha > 1'))"></span>
   <span class="explanation">, otherwise it diverges. </span>
 </div>
-<div class="small-text" *ngIf="integral" style="margin-top: 1em">
+<div class="small-text" *ngIf="type == 'yeti'">
+  <span class="explanation">Oh no, you have the Blue Yeti! Let's hope someone takes it from you before the game ends. </span>
+</div>
+<div class="small-text" *ngIf="integral && type!='yeti'" style="margin-top: 1em">
   <span class="explanation">If </span>
   <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('f(x)'))"></span>
   <span> is monotone decreasing, the infinite series </span>

@@ -93,9 +93,11 @@ export class SocketHandler {
 
             socket.on(ClientSocketMessage.PairNumberInquiry, () => {
                 const game = this.getGameBySocketId(socket.id);
-                const player = game.players.filter((player => player.socketId == socket.id))[0];
-                const hand = player.currentHand;
-                this.io.to(socket.id).emit(ServerSocketMessage.PairNumberAnswer, this.countPairs(hand));
+                if(game){
+                  const player = game.players.filter((player => player.socketId == socket.id))[0];
+                  const hand = player.currentHand;
+                  this.io.to(socket.id).emit(ServerSocketMessage.PairNumberAnswer, this.countPairs(hand));
+                }
             })
 
             socket.on('disconnect', () => {
@@ -124,27 +126,29 @@ export class SocketHandler {
 
     private transferCard(giverSocketId: string, card: any) {
         const game = this.getGameBySocketId(giverSocketId);
-        const playerIndex = game.players.findIndex(player => player.socketId == giverSocketId);
-        const giver = game.players[playerIndex];
-        const receiver = this.getPrecedentPlayer(playerIndex, game);
-        const cardIndex = giver.currentHand.findIndex(playerCard => playerCard.id == card.id);
-        const cardPassed = giver.currentHand[cardIndex];
-        receiver.currentHand.push(cardPassed);
-        this.io.to(receiver.socketId).emit(ServerSocketMessage.SendCard, { id: cardPassed.id, latex: cardPassed.latex, subtype: cardPassed.subtype });
-        giver.currentHand.splice(cardIndex, 1);
-        this.io.to(giver.socketId).emit(ServerSocketMessage.DrawCard);
-        this.checkForWin(giver, game);
+        if(game){
+          const playerIndex = game.players.findIndex(player => player.socketId == giverSocketId);
+          const giver = game.players[playerIndex];
+          const receiver = this.getPrecedentPlayer(playerIndex, game);
+          const cardIndex = giver.currentHand.findIndex(playerCard => playerCard.id == card.id);
+          const cardPassed = giver.currentHand[cardIndex];
+          receiver.currentHand.push(cardPassed);
+          this.io.to(receiver.socketId).emit(ServerSocketMessage.SendCard, { id: cardPassed.id, latex: cardPassed.latex, subtype: cardPassed.subtype });
+          giver.currentHand.splice(cardIndex, 1);
+          this.io.to(giver.socketId).emit(ServerSocketMessage.DrawCard);
+          this.checkForWin(giver, game);
 
-        this.io.to('room' + game.id).emit(ServerSocketMessage.StartPairing);
-        this.setPairingTimer(game, receiver);
+          this.io.to('room' + game.id).emit(ServerSocketMessage.StartPairing);
+          this.setPairingTimer(game, receiver);
+        }
     }
 
     private handlePairs(game: Game, player: SocketUser) {
         const checkResult = this.checkPairs(game);
         if (checkResult.valid) {
-            const lessIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.less.id)[0]);
+            const lessIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id == checkResult.less.id)[0]);
             player.currentHand.splice(lessIndex, 1);
-            const greaterIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.greater.id)[0]);
+            const greaterIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id == checkResult.greater.id)[0]);
             player.currentHand.splice(greaterIndex, 1);
         } else if (checkResult.greater && checkResult.less) { //else if one of the pairing spaces is full
             player.mistakeNum++;
@@ -170,6 +174,7 @@ export class SocketHandler {
                     leftGame: inGamePlayers[0].leftGame,
                 }
                 this.io.to('room' + game.id).emit(ServerSocketMessage.EndGame, { 'result': game.result, 'loser': loser, 'complete': true });
+                this.games = this.games.filter(g => g.id != game.id);
             }
         }
     }
@@ -179,14 +184,15 @@ export class SocketHandler {
     }
 
     private endTurn(socketId: string) {
-        const game = this.games.filter(game => game.players.filter((player => player.socketId == socketId)).length > 0)[0];
+        const game = this.getGameBySocketId(socketId);
         if (game) {
             game.resetPairingTimer = true;
             const playerIndex = game.players.findIndex(player => player.socketId == socketId);
             var nextDrawer = this.getNextPlayer(playerIndex, game);
             const nextIndex = game.players.findIndex(player => player.socketId == nextDrawer.socketId);
             var nextGiver = this.getNextPlayer(nextIndex, game);
-            this.io.to('room' + game.id).emit(ServerSocketMessage.StartTurn, { drawer: nextDrawer.playerId, drawFrom: nextGiver.playerId });
+            const simplePlayers = this.simplifyPlayers(game.players);
+            this.io.to('room' + game.id).emit(ServerSocketMessage.StartTurn, { drawer: nextDrawer.playerId, drawFrom: nextGiver.playerId, players: simplePlayers });
             this.setDrawingTimer(game, nextDrawer, nextGiver);
 
             game.gameState = {
@@ -199,23 +205,34 @@ export class SocketHandler {
     }
 
     setPairingTimer(game: Game, player: SocketUser) {
+        var pairFeedback;
         if (!game.isPairingTimerRunning) {
             game.isPairingTimerRunning = true;
-            game.timer = player.leftGame ? 1 : PAIR_TIME;
+            game.timer = player.leftGame ? 2 : PAIR_TIME;
             var interval = setInterval(() => {
                 this.io.to('room' + game.id).emit(ServerSocketMessage.TimerState, game.timer);
+                game.timer--;
                 if (game.resetPairingTimer) {
                     game.resetPairingTimer = false;
                     game.isPairingTimerRunning = false;
                     clearInterval(interval);
-                } else if (--game.timer < 0) {
-                    if (player.leftGame) {
-                        this.doAutoPairing(game, player);
-                        this.checkForWin(player, game);
-                    }
-                    this.endTurn(player.socketId);
-                    game.isPairingTimerRunning = false;
+                } else if (game.timer >= 0 && player.leftGame && !pairFeedback) {
+                  pairFeedback = this.doAutoPairing(game, player);
+                  this.checkForWin(player, game);
+                } else if (game.timer < 0) {
                     clearInterval(interval);
+                    //if autopairing was made, and a pair was put down, wait a bit before ending the turn for the players to see the pair
+                    if (player.leftGame && pairFeedback && pairFeedback.valid) {
+                        var innerinterval = setInterval(()=>{
+                          this.io.to('room' + game.id).emit(ServerSocketMessage.PairFeedback, pairFeedback);
+                          this.endTurn(player.socketId);
+                          game.isPairingTimerRunning = false;
+                          clearInterval(innerinterval);
+                        }, 3000);
+                    } else {
+                      this.endTurn(player.socketId);
+                      game.isPairingTimerRunning = false;
+                    }
                 }
             }, 1000);
         }
@@ -249,17 +266,23 @@ export class SocketHandler {
                 this.io.to('room' + game.id).emit(ServerSocketMessage.PutDown, { userId: player.playerId, card: res.less, cardPlacement: 'div-less-spot' });
                 this.io.to('room' + game.id).emit(ServerSocketMessage.PutDown, { userId: player.playerId, card: res.greater, cardPlacement: 'div-greater-spot' });
             }
-            this.io.to('room' + game.id).emit(ServerSocketMessage.PairFeedback, {
-                valid: true,
-                convergent: res.less.convergent,
-                less: res.less,
-                greater: res.greater
-            });
             const lessIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == res.less.id)[0]);
             player.currentHand.splice(lessIndex, 1);
             const greaterIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == res.greater.id)[0]);
             player.currentHand.splice(greaterIndex, 1);
+            return {
+              valid: true,
+              convergent: res.less.convergent,
+              less: res.less,
+              greater: res.greater
+            };
         }
+        return {
+          valid: false,
+          convergent: true,
+          less: undefined,
+          greater: undefined
+        };
     }
 
     setDrawingTimer(game: Game, currentPlayer: SocketUser, nextPlayer: SocketUser) {
@@ -333,8 +356,8 @@ export class SocketHandler {
         var output: PairingNotification = {
             valid: false,
             message: "Different convergence property.",
-            less: { id: less.id.toString(), latex: less.latex, subtype: less.subtype },
-            greater: { id: greater.id.toString(), latex: greater.latex, subtype: greater.subtype }
+            less: { id: less.id, latex: less.latex, subtype: less.subtype },
+            greater: { id: greater.id, latex: greater.latex, subtype: greater.subtype }
         };
         if (less.convergent != greater.convergent) output.message = "Different convergence property.";
         if (less.groupId != greater.groupId || less.simple == greater.simple) output.message = "Not a valid pair.";
@@ -343,8 +366,8 @@ export class SocketHandler {
         else output = {
             valid: true,
             convergent: greater.convergent,
-            less: { id: less.id.toString(), latex: less.latex, subtype: less.subtype },
-            greater: { id: greater.id.toString(), latex: greater.latex, subtype: greater.subtype }
+            less: { id: less.id, latex: less.latex, subtype: less.subtype },
+            greater: { id: greater.id, latex: greater.latex, subtype: greater.subtype }
         };
         return output;
     }
@@ -509,6 +532,8 @@ export class SocketHandler {
 
             return this.shuffle(currentDeck);
         }
+        //Sort by card array length to have a bigger chance of avoiding repetitions
+        groups.sort((a, b) => b.cards.length - a.cards.length);
         while (currentDeck.length < this.DECK_SIZE) {
             if (index >= groups.length) index = 0;
             var group = groups[index];
