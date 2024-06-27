@@ -6,7 +6,7 @@ import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from 
 import { CommonModule } from '@angular/common';
 import { get_mathjax_svg } from '../latexhandler';
 import { Subscription } from 'rxjs';
-import { DRAW_TIME, EndGameUserData, GameUpdate, ServerSocketMessage, SimpleCard, SimpleGameState } from '../../../models';
+import { DRAW_TIME, EndGameUserData, ServerSocketMessage, SimpleCard } from '../../../models';
 import { ComparisonTestModalComponent } from '../comparison-test-modal/comparison-test-modal.component';
 import { DeckService } from '../services/deck.service';
 import { ExplanationsComponent } from '../explanations/explanations.component';
@@ -70,7 +70,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
     drawIndex: number = -1;
     yetiImage!: HTMLImageElement;
     result: EndGameUserData[] = [];
-    newCardId: number = 0;
+    newCardId: string = '';
     isSeries: boolean = true;
     isHelpModalOn = false;
     totalPairNumber = 0;
@@ -114,8 +114,6 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
         this.blueYetiService.connect(deckId, this.myId);
         this.handSubscription = this.blueYetiService.getObservable().subscribe((received) => {
             if (received.type == ServerSocketMessage.InitHand) {
-                this.refreshFullGameState(received.data);
-            } else if (received.type == ServerSocketMessage.Refresh) {
                 this.refreshFullGameState(received.data);
             } else if (received.type == ServerSocketMessage.PreviewCardDraw) {
                 this.giveCard(received.data);
@@ -312,7 +310,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
         this.drawIndex = drawData.cardIndex;
         var concatHand = [...this.firstRow, ...this.secondRow];
         if (concatHand[this.drawIndex].id == this.newCardId) {
-            this.newCardId = 0;
+            this.newCardId = '';
         }
         this.blueYetiService.giveCard(concatHand[this.drawIndex]);
     }
@@ -382,42 +380,15 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
     }
 
 
-    refreshFullGameState(gameUpdate: GameUpdate) {
-        console.log(gameUpdate);
-        var concatHand: SimpleCard[] = gameUpdate.hand;
+    refreshFullGameState(hand: any) {
+        var concatHand: SimpleCard[] = hand.hand;
         this.convertLatexToHtml(concatHand);
         //get players and shift array so that the current player is the first (order is preserved)
-        var players: Player[] = gameUpdate.players;
+        var players: Player[] = hand.players;
         this.refreshPlayers(players);
         this.refreshHand(concatHand);
-        this.refreshPairingSpots(gameUpdate.pairingSpots);
         if (this.isAssistedModeOn) this.blueYetiService.inquirePairNumber();
     }
-
-    refreshPairingSpots(state: SimpleGameState){
-      this.convergentGreaterSlot.splice(0);
-      this.divergentGreaterSlot.splice(0);
-      this.convergentLessSlot.splice(0);
-      this.divergentLessSlot.splice(0);
-      if(state.convGreater){
-        this.convertLatexToHtml([state.convGreater]);
-        this.convergentGreaterSlot.push(state.convGreater);
-      }
-      if(state.convLess){
-        this.convertLatexToHtml([state.convLess]);
-        this.convergentLessSlot.push(state.convLess);
-      }
-      if(state.divGreater){
-        this.convertLatexToHtml([state.divGreater]);
-        this.divergentGreaterSlot.push(state.divGreater);
-      }
-      if(state.divLess){
-        this.convertLatexToHtml([state.divLess]);
-        this.divergentLessSlot.push(state.divLess);
-      }
-    }
-
-
 
     refreshHand(concatHand: SimpleCard[]) {
         this.firstRow.splice(0, this.firstRow.length, ...concatHand.slice(0, 4));
@@ -426,7 +397,7 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
     }
 
     refreshPlayers(players: Player[]) {
-        if(!this.hasGameBegun) this.turnId = players[0].playerId;
+        this.turnId = players[0].playerId;
         const index = players.findIndex(player => player.playerId == this.myId.toString());
         if (index != -1) {
             this.players = players.slice(index).concat(players.slice(0, index));
