@@ -18,7 +18,8 @@ export enum ServerSocketMessage {
   PlayerOut = 'playerOut',
   EndGame = 'endGame',
   TimerState = 'timerState',
-  PairNumberAnswer = 'pairNumberAnswer'
+  PairNumberAnswer = 'pairNumberAnswer',
+  Refresh = 'refresh'
 }
 
 export enum ClientSocketMessage {
@@ -54,11 +55,13 @@ export interface Game {
   players: SocketUser[];
   gameState: GameState;
   result: EndGameUserData[];
+  refreshTimer: number;
   timer: number;
   resetDrawingTimer: boolean;
   resetPairingTimer: boolean;
   isDrawingTimerRunning: boolean;
   isPairingTimerRunning: boolean;
+  isOver: boolean;
 }
 export interface CardExtended {
   id: number;
@@ -69,7 +72,7 @@ export interface CardExtended {
   convergent: boolean;
 }
 export interface SimpleCard {
-  id: string;
+  id: number;
   latex: string;
   subtype: string;
   latex_html?: SafeHtml;
@@ -80,11 +83,30 @@ export interface GameState {
   divLess: CardExtended;
   divGreater: CardExtended;
 }
+export interface SimpleGameState {
+  convLess: SimpleCard;
+  convGreater: SimpleCard;
+  divLess: SimpleCard;
+  divGreater: SimpleCard;
+}
 export interface PairingNotification {
   valid: boolean;
   convergent?: boolean;
   message?: string;
   less: SimpleCard;
   greater: SimpleCard;
+}
+
+export interface SimplePlayer{
+  playerId: string;
+  userName: string;
+  cardNumber: number;
+
+}
+
+export interface GameUpdate {
+  players: SimplePlayer[];
+  hand: SimpleCard[];
+  pairingSpots: SimpleGameState;
 }
 

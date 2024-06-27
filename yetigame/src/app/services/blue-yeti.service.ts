@@ -71,7 +71,10 @@ export class BlueYetiService {
     });
     this.socket.on(ServerSocketMessage.PairNumberAnswer, (pairNum) =>{
       this.blueyetiSubject.next({type: ServerSocketMessage.PairNumberAnswer, data: pairNum});
-    })
+    });
+    this.socket.on(ServerSocketMessage.Refresh, (gameUpdate) =>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.Refresh, data: gameUpdate});
+    });
   }
 
   inquirePairNumber(){

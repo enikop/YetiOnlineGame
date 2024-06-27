@@ -2,7 +2,7 @@ import { Response } from "express";
 import { Server, ServerOptions } from "socket.io";
 import { CardGroupController } from './controller/card-group.controller';
 import { CardGroup } from './entity/CardGroup';
-import { ClientSocketMessage, DRAW_TIME, EndGameUserData, PAIR_TIME, ServerSocketMessage } from '../../models';
+import { ClientSocketMessage, DRAW_TIME, EndGameUserData, GameState, GameUpdate, PAIR_TIME, ServerSocketMessage, SimpleCard, SimpleGameState, SimplePlayer } from '../../models';
 import { Game, SocketUser, PairingNotification, CardExtended } from '../../models';
 import { IncomingMessage, ServerResponse } from "http";
 import { Server as HttpServer } from "http";
@@ -12,6 +12,7 @@ export class SocketHandler {
     private io: Server;
     private MAX_PLAYER_NUMBER = 4;
     private DECK_SIZE: number = 29;
+    private REFRESH_PERIOD = 5;
     private games: Game[] = [];
 
     constructor(httpServer: HttpServer<typeof IncomingMessage, typeof ServerResponse> | Partial<ServerOptions>) {
@@ -142,9 +143,9 @@ export class SocketHandler {
     private handlePairs(game: Game, player: SocketUser) {
         const checkResult = this.checkPairs(game);
         if (checkResult.valid) {
-            const lessIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.less.id)[0]);
+            const lessIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id == checkResult.less.id)[0]);
             player.currentHand.splice(lessIndex, 1);
-            const greaterIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id.toString() == checkResult.greater.id)[0]);
+            const greaterIndex = player.currentHand.indexOf(player.currentHand.filter(card => card.id == checkResult.greater.id)[0]);
             player.currentHand.splice(greaterIndex, 1);
         } else if (checkResult.greater && checkResult.less) { //else if one of the pairing spaces is full
             player.mistakeNum++;
@@ -159,6 +160,7 @@ export class SocketHandler {
             const activePlayers = game.players.filter((player => !player.leftGame && player.inGame));
             const inGamePlayers = game.players.filter(player => player.inGame);
             if (inGamePlayers.length == 1 || activePlayers.length < 1) {
+                game.isOver = true;
                 game.resetDrawingTimer = true;
                 game.resetPairingTimer = true;
                 game.isPairingTimerRunning = true;
@@ -333,8 +335,8 @@ export class SocketHandler {
         var output: PairingNotification = {
             valid: false,
             message: "Different convergence property.",
-            less: { id: less.id.toString(), latex: less.latex, subtype: less.subtype },
-            greater: { id: greater.id.toString(), latex: greater.latex, subtype: greater.subtype }
+            less: { id: less.id, latex: less.latex, subtype: less.subtype },
+            greater: { id: greater.id, latex: greater.latex, subtype: greater.subtype }
         };
         if (less.convergent != greater.convergent) output.message = "Different convergence property.";
         if (less.groupId != greater.groupId || less.simple == greater.simple) output.message = "Not a valid pair.";
@@ -343,8 +345,8 @@ export class SocketHandler {
         else output = {
             valid: true,
             convergent: greater.convergent,
-            less: { id: less.id.toString(), latex: less.latex, subtype: less.subtype },
-            greater: { id: greater.id.toString(), latex: greater.latex, subtype: greater.subtype }
+            less: { id: less.id, latex: less.latex, subtype: less.subtype },
+            greater: { id: greater.id, latex: greater.latex, subtype: greater.subtype }
         };
         return output;
     }
@@ -420,10 +422,12 @@ export class SocketHandler {
             },
             result: [],
             timer: DRAW_TIME,
+            refreshTimer: 0,
             resetDrawingTimer: false,
             resetPairingTimer: false,
             isDrawingTimerRunning: false,
-            isPairingTimerRunning: false
+            isPairingTimerRunning: false,
+            isOver: false,
         }
         this.games.push(newGame);
         return newId;
@@ -445,6 +449,33 @@ export class SocketHandler {
         return !this.games.some(game => game.id === newId);
     }
 
+    sendRefreshPeriodically(game: Game){
+        var interval = setInterval(() => {
+            if(game.refreshTimer <= 0){
+              game.refreshTimer = this.REFRESH_PERIOD;
+              this.sendRefresh(game);
+            }
+            if(game.isOver){
+              clearInterval(interval);
+            }
+            game.refreshTimer--;
+        }, 1000);
+    }
+
+    sendRefresh(game: Game){
+      const simplePlayers: SimplePlayer[] = this.simplifyPlayers(game.players);
+      const simpleGameState: SimpleGameState = this.simplifyGameState(game.gameState);
+      for(let player of game.players){
+        const simpleHand : SimpleCard[] = this.simplifyHand(player.currentHand);
+        const gameUpdate: GameUpdate = {
+          players: simplePlayers,
+          hand: simpleHand,
+          pairingSpots: simpleGameState
+        }
+        this.io.to(player.socketId).emit(ServerSocketMessage.Refresh, gameUpdate);
+      }
+    }
+
     sendOutCards(game: Game) {
         var cardGroups: CardGroup[];
         const cardGroupController = new CardGroupController();
@@ -453,12 +484,13 @@ export class SocketHandler {
             () => {
                 var currentDeck: CardExtended[] = this.createDeck(cardGroups);
                 this.distributeDeckToPlayers(game, currentDeck);
-                const simplifiedPlayers = this.simplifyPlayers(game.players);
+                this.sendRefreshPeriodically(game);
+                /*const simplifiedPlayers = this.simplifyPlayers(game.players);
                 for (var i = 0; i < game.players.length; i++) {
                     //produce objects that will be passed to clients
                     const simplifiedHand = this.simplifyHand(game.players[i].currentHand);
                     this.io.to(game.players[i].socketId).emit(ServerSocketMessage.InitHand, JSON.stringify({ hand: simplifiedHand, players: simplifiedPlayers }));
-                }
+                }*/
             }
         );
     }
@@ -474,6 +506,15 @@ export class SocketHandler {
         });
 
     }
+
+    simplifyGameState(gameState: GameState){
+      return {
+        convGreater: gameState.convGreater ? {id: gameState.convGreater.id, latex: gameState.convGreater.latex, subtype: gameState.convGreater.subtype} : undefined,
+        convLess: gameState.convLess ? {id: gameState.convLess.id, latex: gameState.convLess.latex, subtype: gameState.convLess.subtype} : undefined,
+        divLess: gameState.divLess ? {id: gameState.divLess.id, latex: gameState.divLess.latex, subtype: gameState.divLess.subtype} : undefined,
+        divGreater: gameState.divGreater ? {id: gameState.divGreater.id, latex: gameState.divGreater.latex, subtype: gameState.divGreater.subtype} : undefined
+       };
+  }
 
     distributeDeckToPlayers(game: Game, currentDeck: CardExtended[]) {
         var playerIndex = 3;
