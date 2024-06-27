@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CardDTO } from '../models/dto';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { get_mathjax_svg, renderLatex } from '../latexhandler';
+import { get_mathjax_svg } from '../latexhandler';
 import { Subscription } from 'rxjs';
 import { DRAW_TIME, EndGameUserData, ServerSocketMessage, SimpleCard } from '../../../models';
 import { ComparisonTestModalComponent } from '../comparison-test-modal/comparison-test-modal.component';
