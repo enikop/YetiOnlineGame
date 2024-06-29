@@ -133,13 +133,13 @@
     </div>
     <div id="results" *ngIf="result.length > 0">
       <div class="shader"></div>
-      <div id="result-popup">
+      <div id="result-popup" class="popup">
           <div class="result-title">Results</div>
           <div class="result-summary">
               @for(userData of result; track $index){
                 <div class="result-placement">
                   <div class="placement">{{$index+1}}.</div>
-                  <div class="name" [class.own-placement]="userData.userName == myUserName">{{userData.userName}} <span>({{userData.mistakeNum}} mistakes) {{userData.leftGame ? '[robot player]' : ''}}</span></div>
+                  <div class="name" [class.own-placement]="userData.userName == myUserName">{{userData.userName}} <span>({{userData.mistakeNum}} mistakes) {{userData.leftGame ? '[bot]' : ''}}</span></div>
                 </div>
               }
           </div>
@@ -151,8 +151,13 @@
     </div>
     <div id="waiting" *ngIf="!hasGameBegun">
       <div class="shader"></div>
-      <div id="wait-popup">
+      <div id="wait-popup" class="popup">
           <div class="wait-text">Waiting for other players to join...</div>
+          <div class="joined-players">
+            @for(name of joinedUserNames; track $index){
+              <div class="joined-player">{{name}}</div>
+            }
+          </div>
           <div class="loading-container">
             <div class="dot"></div>
             <div class="dot"></div>
@@ -162,6 +167,19 @@
         </div>
           <div class="popup-footer">
             <a class="button" (click)="backToMenu()">Back to menu</a>
+          </div>
+      </div>
+    </div>
+    <div id="out-message" *ngIf="isOutMessageActive && result.length == 0">
+      <div class="shader"></div>
+      <div id="out-message-popup" class="popup">
+          <div class="out-message-title">Your game ends...</div>
+          <div class="out-message-text">Congrats on getting out! You’re in <span class="place-num">{{endPlacement}}.</span> place!</div>
+          <div class="out-message-text">You may continue to a new game, to the main menu, or observe the current game further.</div>
+          <div class="popup-footer">
+            <a class="button" (click)="isOutMessageActive = false">Observe</a>
+            <a class="button" (click)="playAgain()">Again</a>
+            <a class="button" (click)="backToMenu()">Menu</a>
           </div>
       </div>
     </div>

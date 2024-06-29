@@ -458,7 +458,7 @@ html {
   z-index: 4;
 }
 
-#result-popup, #wait-popup {
+.popup {
   z-index: 5;
   display: flex;
   flex-direction: column;
@@ -480,6 +480,11 @@ html {
 
 #wait-popup {
   font-size: 2rem;
+}
+
+.joined-players {
+  margin-top: 1rem;
+  font-size: 1.5rem;
 }
 
 .loading-container {
@@ -528,9 +533,22 @@ html {
   width: fit-content;
 }
 
-.result-title {
+.result-title, .out-message-title {
   font-family: 'Sacramento', cursive;
   font-size: 5rem;
+}
+
+.out-message-title {
+  margin-bottom: 1rem;
+}
+
+.out-message-text {
+  margin-bottom: 0.8rem;
+}
+
+.place-num{
+  color: var(--dark-blue);
+  font-weight: bold;
 }
 
 .result-placement{
@@ -632,7 +650,7 @@ html {
 .latex-container{
   width: 210px;
   height: 140px;
-  padding: 12px;
+  padding: 20px;
   box-sizing: border-box;
   display: flex;
   justify-content: center;

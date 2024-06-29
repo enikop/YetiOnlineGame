@@ -72,7 +72,7 @@
         <i>[N, ∞)</i>, on which it is monotone decreasing. Then the infinite series</span>
       <span [innerHTML]="transform(getLatex('\\ \\sum_{n=N}^{\\infty}f(n)'))"></span>
       <span > converges to a real number <b>if and only if</b> the improper integral</span>
-      <span [innerHTML]="transform(getLatex('\\ \\int_{N}^{\\infty}f(x)\\,dx'))"></span>
+      <span [innerHTML]="transform(getLatex('\\ \\int\\limits_{N}^{\\infty}f(x)\\,dx'))"></span>
       <span > converges.</span>
     </div>
     <div class="paragraph">
@@ -94,7 +94,7 @@
         <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty} b_n'))"></span>
         <span>, while </span>
         <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty} b_n'))"></span>
-        <span> is a majorant of </span>
+        <span> is in turn a majorant of </span>
         <span [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty} a_n'))"></span>
         <span>, then: </span>
         <ul>
@@ -158,6 +158,77 @@
         <span > converges, if </span>
         <span [innerHTML]="transform(getLatex('\\left|{q}\\right| < 1'))"></span>
         <span >, otherwise it diverges. </span>
+      </div>
+    </div>
+    <div class="paragraph">
+      As per the integral test of infinite series, the following statements can also be established departing from the
+      previously stated convergence rules for infinite sums.
+    </div>
+    <div class="rule-name">Implications on improper integrals</div>
+    <div class="paragraph rule enumeration">
+      <div>
+        <span class="explanation">As per the integral test and the divergence of harmonic series, the improper integral  </span>
+        <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty}\\frac{1}{x} \\, dx'))"></span>
+        <span class="explanation"> diverges.</span>
+      </div>
+      <div>
+        <span class="explanation">As per the integral test and the properties of hyperharmonic series, the improper integral </span>
+        <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty}\\frac{1}{x^{\\alpha}} \\, dx\\ \\ \\left(\\alpha\\in\\mathbb{R}\\right)'))"></span>
+        <span class="explanation"> converges, if </span>
+        <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\alpha > 1'))"></span>
+        <span class="explanation">, otherwise it diverges. </span>
+      </div>
+      <div>
+        <span class="explanation">As per the integral test and the properties of geometric series, the improper integral </span>
+        <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty}aq^x \\, dx\\ \\ \\left(q\\in\\mathbb{R}, a\\in\\mathbb{R}^+\\right)'))"></span>
+        <span class="explanation"> converges, if </span>
+        <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\left|{q}\\right| < 1'))"></span>
+        <span class="explanation">, otherwise it diverges. </span>
+      </div>
+      <div>
+        <span class="explanation">The improper integral </span>
+        <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty}k \\, dx\\ \\ \\left(k\\in\\mathbb{R}, \\ k\\neq 0\\right)'))"></span>
+        <span class="explanation"> always diverges.</span>
+      </div>
+    </div>
+    <div class="paragraph">
+      Moreover, a direct comparison test can be conducted to determine the convergence property of improper integrals,
+      analogously to the case of infinite series.
+    </div>
+    <div class="left">
+      <div class="rule-name">Direct comparison test of improper integrals</div>
+      <div class="paragraph rule">
+        <span >If the inequality </span>
+        <span [innerHTML]="transform(getLatex('0 \\leq f(x) \\leq g(x)'))"></span>
+        <span> holds for all <i>x</i> sufficiently large, indicating that the improper integral </span>
+        <span [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty} f(x) \\, dx'))"></span>
+        <span > is a minorant of the integral </span>
+        <span [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty} g(x) \\, dx'))"></span>
+        <span>, while </span>
+        <span [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty} g(x) \\, dx'))"></span>
+        <span> is in turn a majorant of </span>
+        <span [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty} f(x) \\, dx'))"></span>
+        <span>, then: </span>
+        <ul>
+          <li>
+            <span >If </span>
+            <span [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty} g(x) \\, dx'))">
+            </span>
+            <span > converges (thus a <b>convergent majorant</b> exists), then </span>
+            <span [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty} f(x) \\, dx'))">
+            </span>
+            <span > also converges. </span>
+          </li>
+          <li>
+            <span >If </span>
+            <span [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty} f(x) \\, dx'))">
+            </span>
+            <span > diverges (thus a <b>divergent minorant</b> exists), then </span>
+            <span [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty} g(x) \\, dx'))">
+            </span>
+            <span > also diverges. </span>
+          </li>
+        </ul>
       </div>
     </div>
   </div>

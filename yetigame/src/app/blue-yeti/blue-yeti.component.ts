@@ -1,6 +1,6 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { BlueYetiService, SpotType } from '../services/blue-yeti.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { CardDTO } from '../models/dto';
 import { CdkDragDrop, DragDropModule, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
@@ -50,6 +50,8 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
   currentDeck: (CardDTO | string)[] = ['y'];
   handSubscription: Subscription | undefined;
   giveCardSubscription: Subscription | undefined;
+  endPlacement = 0;
+  isOutMessageActive = false;
 
   divergentLessSlot: SimpleCard[] = [];
   divergentGreaterSlot: SimpleCard[] = [];
@@ -67,9 +69,8 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
   turnId: string = "";
   pullFromId: string = "";
   turnPhase: TurnPhase = 'draw';
-  blueYetiService!: BlueYetiService;
+  blueYetiService = inject(BlueYetiService);
   drawIndex: number = -1;
-  yetiImage!: HTMLImageElement;
   result: EndGameUserData[] = [];
   newCardId: number = -1;
   isSeries: boolean = true;
@@ -80,21 +81,31 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
   currentRoute = inject(ActivatedRoute);
   cdr = inject(ChangeDetectorRef);
   sanitizer = inject(DomSanitizer);
+  joinedUserNames : string[] = [];
 
   isPlannedShowDelayOn = false;
+  routerSubscription!: Subscription;
+
+  constructor(){
+    this.routerSubscription = this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        this.blueYetiService.disconnect();
+      }
+    });
+  }
 
   ngOnInit(): void {
-    this.yetiImage = new Image();
-    //load resources then initialize game
-    this.yetiImage.addEventListener("load", () => {
-      this.initializeGame();
-    });
-    this.yetiImage.src = '../../assets/yeti.png';
+    this.initializeGame();
+
   }
 
   ngOnDestroy(): void {
+    this.blueYetiService.disconnect();
     if (this.handSubscription) {
       this.handSubscription.unsubscribe();
+    }
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
     }
   }
 
@@ -111,7 +122,6 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
         console.error('Error fetching cards:', error.message);
       }
     })
-    this.blueYetiService = new BlueYetiService();
     this.myId = Math.floor(Math.random() * 100).toString(); //temp line
     this.myUserName = 'Player' + this.myId; //temp line
     this.blueYetiService.connect(deckId, this.myId);
@@ -144,6 +154,11 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
         this.timer = received.data;
       } else if (received.type == ServerSocketMessage.PairNumberAnswer) {
         this.totalPairNumber = received.data;
+      } else if (received.type == ServerSocketMessage.PlayerJoin) {
+        this.joinedUserNames.push(received.data);
+      } else if (received.type == ServerSocketMessage.PlayerQuit) {
+        const index = this.joinedUserNames.indexOf(received.data);
+        this.joinedUserNames.splice(index, 1);
       }
     });
   }
@@ -155,14 +170,19 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
       if (resultData.loser.playerId == this.myId) {
         this.setMessage('You lost :(');
       }
-    } else {
-      this.setMessage('Somebody left the game. Robot player activated.');
+    } else if(resultData.isBotActivated) {
+      this.setMessage('Somebody left the game. Bot activated.');
     }
   }
-  handlePlayerOut(id: string) {
-    this.setMessage('Player out: ' + id);
-    if (id == this.turnId && this.turnId == this.myId) {
-      this.blueYetiService.endTurn();
+  handlePlayerOut(playerData:any) {
+    if(playerData.playerId == this.myId){
+      this.endPlacement = playerData.placement; //TODO
+      this.isOutMessageActive = true;
+      if (playerData.playerId == this.turnId) {
+        this.blueYetiService.endTurn();
+      }
+    } else {
+      this.setMessage(`Player out: ${playerData.userName} (${playerData.placement}. place)`);
     }
   }
   getAllMyCards() {
@@ -438,10 +458,12 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
   }
 
   backToMenu() {
+    this.blueYetiService.disconnect();
     this.router.navigateByUrl('');
   }
 
   playAgain() {
+    this.blueYetiService.disconnect();
     window.location.reload();
   }
 
@@ -459,4 +481,5 @@ export class BlueYetiComponent implements OnInit, OnDestroy {
   transform(svg: string): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(svg);
   }
+
 }

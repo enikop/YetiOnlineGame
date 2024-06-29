@@ -67,6 +67,7 @@
   background-color: var(--mid-blue);
   color: white;
   border-radius: 1rem 1rem  0 0;
+  margin-top: 1rem;
 }
 
 .left .rule:nth-child(even){
@@ -86,5 +87,9 @@
   margin: 1rem 0;
   color: var(--dark-blue);
   font-family: "Sacramento", cursive;
+}
+
+.enumeration div {
+  margin-bottom: 1rem;
 }
 

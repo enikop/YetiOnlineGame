@@ -12,6 +12,7 @@ export class SocketHandler {
     private io: Server;
     private MAX_PLAYER_NUMBER = 4;
     private DECK_SIZE: number = 29;
+    private JOIN_WAIT_TIME = 30;
     private games: Game[] = [];
 
     constructor(httpServer: HttpServer<typeof IncomingMessage, typeof ServerResponse> | Partial<ServerOptions>) {
@@ -23,6 +24,7 @@ export class SocketHandler {
         this.io.on("connection", (socket) => {
             const deckId = socket.handshake.query.deckId as string;
             const userId = socket.handshake.query.userId as string;
+            console.log('Client connected: '+socket.id+' '+userId);
             const socketUser: SocketUser = {
                 playerId: userId,
                 socketId: socket.id,
@@ -35,6 +37,7 @@ export class SocketHandler {
             const gameId = this.handleJoin(deckId, socketUser);
             socket.join('room' + gameId);
             const game = this.games.filter(game => game.id == gameId)[0];
+            console.log(this.games.length);
             if (game.full) {
                 this.io.to('room' + gameId).emit(ServerSocketMessage.StartGame, gameId);
                 this.sendOutCards(game);
@@ -47,10 +50,20 @@ export class SocketHandler {
                 const playerIndex = game.players.findIndex(player => player.socketId == socket.id);
                 var nextPlayer = this.getNextPlayer(playerIndex, game);
                 if (nextPlayer.leftGame) {
-                    var index = Math.floor(Math.random() * nextPlayer.currentHand.length);
+                    var index = drawData.cardIndex;
                     var card = nextPlayer.currentHand[index];
                     this.transferCard(nextPlayer.socketId, { id: card.id, latex: card.latex, subtype: card.subtype })
                 } else {
+                    game.isWaitingForCardGive = true;
+                    var interval = setInterval(()=>{
+                      if(game.isWaitingForCardGive){
+                        game.isWaitingForCardGive = false;
+                        var index = drawData.cardIndex;
+                        var card = nextPlayer.currentHand[index];
+                        this.transferCard(nextPlayer.socketId, { id: card.id, latex: card.latex, subtype: card.subtype })
+                      }
+                      clearInterval(interval);
+                    }, 3000);
                     this.io.to(nextPlayer.socketId).emit(ServerSocketMessage.PreviewCardDraw, drawData);
                 }
             })
@@ -103,10 +116,16 @@ export class SocketHandler {
             socket.on('disconnect', () => {
                 console.log('A client disconnected:', socket.id);
                 const game = this.getGameBySocketId(socket.id);
+                if(game) socket.leave('room' + game.id);
                 //if the game hasn't started yet, simply disconnect the player
                 if (game && !game.full) {
-                    var index = this.games.indexOf(game);
+                    const player = game.players.filter((player => player.socketId == socket.id))[0];
+                    var index = game.players.indexOf(player);
+                    this.io.to('room' + game.id).emit(ServerSocketMessage.PlayerQuit, player.userName);
                     game.players.splice(index, 1);
+                    if(game.players.length == 0){
+                      this.deleteGame(game);
+                    }
                 } else if (game) {
                     const player = game.players.filter((player => player.socketId == socket.id))[0];
                     player.leftGame = true;
@@ -114,28 +133,33 @@ export class SocketHandler {
                     if (activePlayers.length == 0) {
                         this.io.to('room' + game.id).emit(ServerSocketMessage.EndGame, { 'result': game.result, 'complete': true });
                         //If no more active players are there, delete the game
-                        this.games = this.games.filter(g => g.id != game.id);
+                        this.deleteGame(game);
                     } else {
-                        this.io.to('room' + game.id).emit(ServerSocketMessage.EndGame, { 'result': game.result, 'complete': false });
+                        this.io.to('room' + game.id).emit(ServerSocketMessage.EndGame, { 'result': game.result, 'complete': false, 'isBotActivated': player.inGame });
                     }
-                    //TODO let server do pairing as a robot player (now robot player only pulls and gives cards)
                 }
+                console.log(this.games.length);
             });
         });
+    }
+
+    private deleteGame(game: Game){
+      this.games = this.games.filter(g => g.id != game.id);
     }
 
     private transferCard(giverSocketId: string, card: any) {
         const game = this.getGameBySocketId(giverSocketId);
         if(game){
+          game.isWaitingForCardGive = false;
           const playerIndex = game.players.findIndex(player => player.socketId == giverSocketId);
           const giver = game.players[playerIndex];
           const receiver = this.getPrecedentPlayer(playerIndex, game);
           const cardIndex = giver.currentHand.findIndex(playerCard => playerCard.id == card.id);
           const cardPassed = giver.currentHand[cardIndex];
           receiver.currentHand.push(cardPassed);
-          this.io.to(receiver.socketId).emit(ServerSocketMessage.SendCard, { id: cardPassed.id, latex: cardPassed.latex, subtype: cardPassed.subtype });
+          if(!receiver.leftGame) this.io.to(receiver.socketId).emit(ServerSocketMessage.SendCard, { id: cardPassed.id, latex: cardPassed.latex, subtype: cardPassed.subtype });
           giver.currentHand.splice(cardIndex, 1);
-          this.io.to(giver.socketId).emit(ServerSocketMessage.DrawCard);
+          if(!giver.leftGame) this.io.to(giver.socketId).emit(ServerSocketMessage.DrawCard);
           this.checkForWin(giver, game);
 
           this.io.to('room' + game.id).emit(ServerSocketMessage.StartPairing);
@@ -159,7 +183,7 @@ export class SocketHandler {
         if (playerToCheck.currentHand.length == 0) {
             playerToCheck.inGame = false;
             game.result.push({ playerId: playerToCheck.playerId, userName: playerToCheck.userName, mistakeNum: playerToCheck.mistakeNum, leftGame: playerToCheck.leftGame });
-            this.io.to('room' + game.id).emit(ServerSocketMessage.PlayerOut, playerToCheck.playerId);
+            this.io.to('room' + game.id).emit(ServerSocketMessage.PlayerOut, {playerId: playerToCheck.playerId, placement: game.result.length, userName: playerToCheck.userName});
             const activePlayers = game.players.filter((player => !player.leftGame && player.inGame));
             const inGamePlayers = game.players.filter(player => player.inGame);
             if (inGamePlayers.length == 1 || activePlayers.length < 1) {
@@ -174,7 +198,7 @@ export class SocketHandler {
                     leftGame: inGamePlayers[0].leftGame,
                 }
                 this.io.to('room' + game.id).emit(ServerSocketMessage.EndGame, { 'result': game.result, 'loser': loser, 'complete': true });
-                this.games = this.games.filter(g => g.id != game.id);
+                this.deleteGame(game);
             }
         }
     }
@@ -302,7 +326,16 @@ export class SocketHandler {
                         var card = nextPlayer.currentHand[index];
                         this.transferCard(nextPlayer.socketId, { id: card.id, latex: card.latex, subtype: card.subtype });
                     } else {
-                        this.io.to(nextPlayer.socketId).emit(ServerSocketMessage.PreviewCardDraw, { userId: currentPlayer, cardIndex: index });
+                      game.isWaitingForCardGive = true;
+                      var innerinterval = setInterval(()=>{
+                        if(game.isWaitingForCardGive){
+                          game.isWaitingForCardGive = false;
+                          var card = nextPlayer.currentHand[index];
+                          this.transferCard(nextPlayer.socketId, { id: card.id, latex: card.latex, subtype: card.subtype })
+                        }
+                        clearInterval(innerinterval);
+                      }, 3000);
+                      this.io.to(nextPlayer.socketId).emit(ServerSocketMessage.PreviewCardDraw, { userId: currentPlayer, cardIndex: index });
                     }
                     game.resetPairingTimer = false;
                     game.isDrawingTimerRunning = false;
@@ -420,7 +453,11 @@ export class SocketHandler {
             return this.createNewGame(deckId, socketUser);
         }
         else {
+            for(let player of joinableGames[0].players){
+              if(!socketUser.leftGame) this.io.to(socketUser.socketId).emit(ServerSocketMessage.PlayerJoin, player.userName);
+            }
             this.addPlayerToGame(joinableGames[0], socketUser);
+            this.io.to('room' +joinableGames[0].id).emit(ServerSocketMessage.PlayerJoin, socketUser.userName);
             return joinableGames[0].id;
         }
     }
@@ -443,13 +480,46 @@ export class SocketHandler {
             },
             result: [],
             timer: DRAW_TIME,
+            resetStartTimer: false,
             resetDrawingTimer: false,
             resetPairingTimer: false,
             isDrawingTimerRunning: false,
-            isPairingTimerRunning: false
+            isPairingTimerRunning: false,
+            isStartTimerRunning: true,
+            isWaitingForCardGive: false
         }
         this.games.push(newGame);
+        this.setJoinBotTimer(newGame);
         return newId;
+    }
+
+    setJoinBotTimer(newGame: Game){
+      var interval = setInterval(()=>{
+        if(newGame.players.length == 0){
+          //If everybody quit, delete game
+          this.deleteGame(newGame);
+        } else if (newGame.players.length < 4) {
+          //If there is someone but not enough people, fill with bots
+          newGame.full = true;
+          const missingNum = 4 - newGame.players.length;
+          for(let i = 0; i < missingNum; i++){
+            const bot: SocketUser = {
+              socketId: 'Bot'+i+newGame.id,
+              playerId : 'Bot'+i+newGame.id,
+              userName : 'Bot'+i,
+              inGame: true,
+              leftGame: true,
+              currentHand: [],
+              mistakeNum: 0
+            }
+            newGame.players.push(bot);
+          }
+          this.io.to('room' + newGame.id).emit(ServerSocketMessage.StartGame, newGame.id);
+          this.sendOutCards(newGame);
+          this.setDrawingTimer(newGame, newGame.players[0], newGame.players[1]);
+        }
+        clearInterval(interval);
+      }, this.JOIN_WAIT_TIME*1000);
     }
 
     addPlayerToGame(gameToJoin: Game, socketUser: SocketUser) {
@@ -480,7 +550,8 @@ export class SocketHandler {
                 for (var i = 0; i < game.players.length; i++) {
                     //produce objects that will be passed to clients
                     const simplifiedHand = this.simplifyHand(game.players[i].currentHand);
-                    this.io.to(game.players[i].socketId).emit(ServerSocketMessage.InitHand, JSON.stringify({ hand: simplifiedHand, players: simplifiedPlayers }));
+                    if(!game.players[i].leftGame)
+                      this.io.to(game.players[i].socketId).emit(ServerSocketMessage.InitHand, JSON.stringify({ hand: simplifiedHand, players: simplifiedPlayers }));
                 }
             }
         );

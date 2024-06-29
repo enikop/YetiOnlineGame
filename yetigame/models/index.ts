@@ -18,7 +18,9 @@ export enum ServerSocketMessage {
   PlayerOut = 'playerOut',
   EndGame = 'endGame',
   TimerState = 'timerState',
-  PairNumberAnswer = 'pairNumberAnswer'
+  PairNumberAnswer = 'pairNumberAnswer',
+  PlayerJoin = 'playerJoin',
+  PlayerQuit = 'playerQuit'
 }
 
 export enum ClientSocketMessage {
@@ -57,8 +59,11 @@ export interface Game {
   timer: number;
   resetDrawingTimer: boolean;
   resetPairingTimer: boolean;
+  resetStartTimer: boolean;
   isDrawingTimerRunning: boolean;
   isPairingTimerRunning: boolean;
+  isStartTimerRunning: boolean;
+  isWaitingForCardGive: boolean;
 }
 export interface CardExtended {
   id: number;

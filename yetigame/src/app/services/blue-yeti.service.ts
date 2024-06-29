@@ -15,12 +15,11 @@ interface Message {
   providedIn: 'root'
 })
 export class BlueYetiService {
-  private socket!: Socket;
+  private socket?: Socket;
   private blueyetiSubject: Subject<Message> = new Subject<Message>();
 
-  constructor() {
-   }
   connect(deckId:number, userId:string){
+    this.disconnect();
     this.socket = io({query: {
       deckId: deckId,
       userId: userId,
@@ -60,8 +59,8 @@ export class BlueYetiService {
     this.socket.on(ServerSocketMessage.PairFeedback, (feedbackData)=>{
       this.blueyetiSubject.next({type: ServerSocketMessage.PairFeedback, data: feedbackData});
     });
-    this.socket.on(ServerSocketMessage.PlayerOut, (id)=>{
-      this.blueyetiSubject.next({type: ServerSocketMessage.PlayerOut, data: id});
+    this.socket.on(ServerSocketMessage.PlayerOut, (playerData)=>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.PlayerOut, data: playerData});
     });
     this.socket.on(ServerSocketMessage.EndGame, (resultData)=>{
       this.blueyetiSubject.next({type: ServerSocketMessage.EndGame, data: resultData});
@@ -71,35 +70,50 @@ export class BlueYetiService {
     });
     this.socket.on(ServerSocketMessage.PairNumberAnswer, (pairNum) =>{
       this.blueyetiSubject.next({type: ServerSocketMessage.PairNumberAnswer, data: pairNum});
-    })
+    });
+    this.socket.on(ServerSocketMessage.PlayerJoin, (username) =>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.PlayerJoin, data: username});
+    });
+    this.socket.on(ServerSocketMessage.PlayerQuit, (username) =>{
+      this.blueyetiSubject.next({type: ServerSocketMessage.PlayerQuit, data: username});
+    });
+    this.socket.on('disconnect', () => {
+      console.log('Socket disconnected');
+      this.socket = undefined;
+    });
   }
 
   inquirePairNumber(){
-    this.socket.emit(ClientSocketMessage.PairNumberInquiry);
+    this.socket?.emit(ClientSocketMessage.PairNumberInquiry);
   }
 
   giveCard(card: SimpleCard){
-    this.socket.emit(ClientSocketMessage.SendCard, card);
+    this.socket?.emit(ClientSocketMessage.SendCard, card);
   }
 
   drawCard(cardIndex: number, userId: string){
-    this.socket.emit(ClientSocketMessage.ChooseCard, {userId: userId, cardIndex: cardIndex});
+    this.socket?.emit(ClientSocketMessage.ChooseCard, {userId: userId, cardIndex: cardIndex});
   }
 
   endTurn(){
-    this.socket.emit(ClientSocketMessage.EndTurn);
+    this.socket?.emit(ClientSocketMessage.EndTurn);
   }
 
   placeCard(card: SimpleCard, place: SpotType,  userId: string){
-    this.socket.emit(ClientSocketMessage.PutDown, {userId: userId, card: card, cardPlacement: place})
+    this.socket?.emit(ClientSocketMessage.PutDown, {userId: userId, card: card, cardPlacement: place})
   }
 
   moveCard(card: SimpleCard, prevPlace: SpotType, newPlace:SpotType, userId:string){
-    this.socket.emit(ClientSocketMessage.PutDownMove, {userId: userId, card: card, previousPlacement: prevPlace, newPlacement: newPlace})
+    this.socket?.emit(ClientSocketMessage.PutDownMove, {userId: userId, card: card, previousPlacement: prevPlace, newPlacement: newPlace})
   }
 
   replaceCard(card: SimpleCard, place: SpotType,  userId: string){
-    this.socket.emit(ClientSocketMessage.PickUp, {userId: userId, card: card, cardPlacement: place})
+    this.socket?.emit(ClientSocketMessage.PickUp, {userId: userId, card: card, cardPlacement: place})
+  }
+
+  disconnect(){
+    this.socket?.disconnect();
+    this.socket = undefined;
   }
 
   getObservable() {

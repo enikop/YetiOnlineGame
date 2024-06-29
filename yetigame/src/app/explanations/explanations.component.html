@@ -1,23 +1,47 @@
-<div class="small-text" *ngIf="type == 'harmonic'">
+<div class="small-text" *ngIf="!integral && type == 'harmonic'">
   <span class="explanation">The harmonic series </span>
   <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty}\\frac{1}{n}'))"></span>
   <span class="explanation"> diverges.</span>
 </div>
-<div class="small-text"*ngIf="type == 'geometric'">
+<div class="small-text" *ngIf="integral && type == 'harmonic'">
+  <span class="explanation">As per the integral test for of infinite series and the divergence of harmonic series, the improper integral  </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty}\\frac{1}{x} \\, dx'))"></span>
+  <span class="explanation"> diverges.</span>
+</div>
+<div class="small-text"*ngIf="!integral && type == 'geometric'">
   <span class="explanation">The geometric series </span>
   <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=0}^{\\infty}aq^n\\ \\ \\left(q\\in\\mathbb{R}, a\\in\\mathbb{R}^+\\right)'))"></span>
   <span class="explanation"> converges, if </span>
   <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\left|{q}\\right| < 1'))"></span>
   <span class="explanation">, otherwise it diverges. </span>
 </div>
-<div class="small-text" *ngIf="type == 'constant'">
+<div class="small-text"*ngIf="integral && type == 'geometric'">
+  <span class="explanation">As per the integral test of infinite series and the properties of geometric series, the improper integral </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty}aq^x \\, dx\\ \\ \\left(q\\in\\mathbb{R}, a\\in\\mathbb{R}^+\\right)'))"></span>
+  <span class="explanation"> converges, if </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\left|{q}\\right| < 1'))"></span>
+  <span class="explanation">, otherwise it diverges. </span>
+</div>
+<div class="small-text" *ngIf="!integral && type == 'constant'">
   <span class="explanation">The constant series </span>
   <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty}k\\ \\ \\left(k\\in\\mathbb{R}, \\ k\\neq 0\\right)'))"></span>
   <span class="explanation"> always diverges.</span>
 </div>
-<div class="small-text" *ngIf="type == 'hyperharmonic'">
+<div class="small-text" *ngIf="integral && type == 'constant'">
+  <span class="explanation">The improper integral </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty}k \\, dx\\ \\ \\left(k\\in\\mathbb{R}, \\ k\\neq 0\\right)'))"></span>
+  <span class="explanation"> always diverges.</span>
+</div>
+<div class="small-text" *ngIf="!integral && type == 'hyperharmonic'">
   <span class="explanation">The hyperharmonic series </span>
   <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\sum_{n=1}^{\\infty}\\frac{1}{n^{\\alpha}}\\ \\ \\left(\\alpha\\in\\mathbb{R}\\right)'))"></span>
+  <span class="explanation"> converges, if </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\alpha > 1'))"></span>
+  <span class="explanation">, otherwise it diverges. </span>
+</div>
+<div class="small-text" *ngIf="integral && type == 'hyperharmonic'">
+  <span class="explanation">As per the integral test of infinite series and the properties of hyperharmonic series, the improper integral </span>
+  <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty}\\frac{1}{x^{\\alpha}} \\, dx\\ \\ \\left(\\alpha\\in\\mathbb{R}\\right)'))"></span>
   <span class="explanation"> converges, if </span>
   <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\alpha > 1'))"></span>
   <span class="explanation">, otherwise it diverges. </span>
@@ -25,7 +49,7 @@
 <div class="small-text" *ngIf="type == 'yeti'">
   <span class="explanation">Oh no, you have the Blue Yeti! Let's hope someone takes it from you before the game ends. </span>
 </div>
-<div class="small-text" *ngIf="integral && type!='yeti'" style="margin-top: 1em">
+<!--<div class="small-text" *ngIf="integral && type!='yeti'" style="margin-top: 1em">
   <span class="explanation">If </span>
   <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('f(x)'))"></span>
   <span> is monotone decreasing, the infinite series </span>
@@ -33,4 +57,4 @@
   <span class="explanation"> converges to a real number if and only if the improper integral</span>
   <span style="font-size: 1rem;" [innerHTML]="transform(getLatex('\\int\\limits_{N}^{\\infty}f(x)\\,dx'))"></span>
   <span class="explanation"> converges.</span>
-</div>
+</div>-->

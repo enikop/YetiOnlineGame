@@ -252,6 +252,13 @@ insert into card_group values(37, true, 'hyperharmonic');
 insert into card_group values(38, true, 'hyperharmonic');
 insert into card_group values(39, true, 'geometric');
 insert into card_group values(40, true, 'geometric');
+insert into card_group values(41, false, 'hyperharmonic');
+insert into card_group values(42, false, 'hyperharmonic');
+
+insert into card (deck_id, group_id, simple, latex) values (3, 41, true, '\\int\\limits_{2}^{\\infty} \\frac{1}{9\\sqrt[5]{x}} \\ \\mathrm{d} x');
+insert into card (deck_id, group_id, simple, latex) values (3, 41, false, '\\int\\limits_{2}^{\\infty} \\frac{3+5e^x}{27\\cdot\\sqrt[5]{x}} \\ \\mathrm{d} x');
+insert into card (deck_id, group_id, simple, latex) values (3, 42, true, '\\int\\limits_{1}^{\\infty} \\frac{4}{x^{8/9}} \\ \\mathrm{d} x');
+insert into card (deck_id, group_id, simple, latex) values (3, 42, false, '\\int\\limits_{1}^{\\infty} \\frac{8x+3sin^2{x}}{2x\\sqrt[9]{x^{8}}} \\ \\mathrm{d} x');
 
 
 insert into card (deck_id, group_id, simple, latex) values (3, 29, true, '\\int\\limits_{1}^{\\infty} \\frac{1}{4\\sqrt{x}} \\ \\mathrm{d} x');
